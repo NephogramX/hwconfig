@@ -1,17 +1,10 @@
 package hwconfig
 
-const (
-	PacketForwarderBackend = iota
-	BasicStationBackend
-)
-
-/* **************************************************
- * PacketForwarder Conifg
- */
+import "encoding/json"
 
 type FineTimeStamp struct {
-	Enable bool   `json:"enable,omitempty"`
-	Mode   string `json:"mode,omitempty"`
+	Enable bool   `json:"enable"`
+	Mode   string `json:"mode"`
 }
 
 type RssiTcomp struct {
@@ -39,6 +32,7 @@ type ChanMultiSFAll struct {
 	Radio                 int32   `json:"radio"`
 	IF                    int32   `json:"if"`
 }
+
 type ChanLoraStd struct {
 	Enable                bool  `json:"enable"`
 	Radio                 int32 `json:"radio"`
@@ -50,6 +44,7 @@ type ChanLoraStd struct {
 	ImplicitcrcEn         bool  `json:"implicit_crc_en"`
 	Implicitcoderate      int32 `json:"implicit_coderate"`
 }
+
 type ChanLoraFSK struct {
 	Enable    bool  `json:"enable"`
 	Radio     int32 `json:"radio"`
@@ -146,124 +141,13 @@ type PacketForwarderConfig struct {
 	DebugConf     `json:"debug_conf"`
 }
 
-/* **************************************************
- * GatewayBridge Conifg
- */
-
-type SemtechUdp struct {
-	UdpBind string `toml:"udp_bind"`
+func (c *PacketForwarderConfig) Marshal() ([]byte, error) {
+	jsonData, err := json.MarshalIndent(c, "", "  ")
+	return jsonData, err
 }
 
-type BasicStation struct {
-	Bind string `toml:"bind"`
-}
-
-type GbBackend struct {
-	Type         string `toml:"type"`
-	SemtechUdp   `toml:"semtech_udp"`
-	BasicStation `toml:"basicStation"`
-}
-
-type Generic struct {
-	Server string `toml:"server"`
-}
-
-type Auth struct {
-	Type    string `toml:"type"`
-	Generic `toml:"generic"`
-}
-
-type GbMqtt struct {
-	EventTopicTemplate   string `toml:"event_topic_template"`
-	CommandTopicTemplate string `toml:"command_topic_template"`
-	Auth                 `toml:"auth"`
-}
-
-type Intergration struct {
-	Marshaler string `toml:"marshaler"`
-	GbMqtt    `toml:"gb_mqtt"`
-}
-
-type GatewayBridgeConfig struct {
-	GbBackend    `toml:"backend"`
-	Intergration `toml:"intergration"`
-}
-
-/* **************************************************
- * NetworkServer Conifg
- */
-
-type Postgresql struct {
-	Dsn string `toml:"dsn"`
-}
-
-type Redis struct {
-	Url string `toml:"url"`
-}
-
-type Api struct {
-	Bind string `toml:"bind"`
-}
-
-type NsMqtt struct {
-	CommandTopicTemplate string `toml:"command_topic_template"`
-	EventTopic           string `toml:"event_topic"`
-	Server               string `toml:"server"`
-}
-
-type Band struct {
-	Name string `toml:"name"`
-}
-
-type NsBackend struct {
-	Type   string `toml:"type"`
-	NsMqtt `toml:"mqtt"`
-}
-
-type Gateway struct {
-	NsBackend `toml:"backend"`
-}
-
-type NetworkServer struct {
-	NetId   string `toml:"net_id"`
-	Api     `toml:"api"`
-	Band    `toml:"band"`
-	Gateway `toml:"gateway"`
-}
-
-type NetworkServerConfig struct {
-	Postgresql    `toml:"postgresql"`
-	Redis         `toml:"redis"`
-	NetworkServer `toml:"NetworkServer"`
-}
-
-/* **************************************************
- * Region Interface
- */
-
-type Configs struct {
-	PacketForwarder *PacketForwarderConfig
-	GatewayBridge   *GatewayBridgeConfig
-	NetworkServer   *NetworkServerConfig
-}
-
-type CustomBand struct {
-	CenterFrequency int
-	FrequencyShift  [5]int
-}
-
-type Builder interface {
-	// Build create a new config based on region & backend，the config will be nil if no change
-	Build() (*Configs, error)
-
-	// SetBackend sets the gateway backend (PacketForwarderBackend/BasicStationBackend), default is PacketForwarder
-	SetBackend(b int)
-
-	// SetCustomBand sets the EU868 custom band
-	SetCustomBand(c CustomBand)
-
-	// SetSubband sets CN470 & US915's subband, default is 0
-	SetSubband(fsb int)
+func (c *PacketForwarderConfig) IsNil() bool {
+	return c == nil
 }
 
 func FillPacketForwarder(pfc *PacketForwarderConfig) *PacketForwarderConfig {
@@ -280,10 +164,11 @@ func FillPacketForwarder(pfc *PacketForwarderConfig) *PacketForwarderConfig {
 				Mode:   "all_sf",
 			},
 			Radio0: Radio0{
-				Enable:     true,
-				Type:       "SX1250",
-				Freq:       pfc.Radio0.Freq,
-				RssiOffset: -215.4,
+				Enable:          true,
+				Type:            "SX1250",
+				SingleInputMode: pfc.Radio0.SingleInputMode,
+				Freq:            pfc.Radio0.Freq,
+				RssiOffset:      pfc.Radio0.RssiOffset,
 				RssiTcomp: RssiTcomp{
 					CoeffA: 0,
 					CoeffB: 0,
@@ -293,14 +178,15 @@ func FillPacketForwarder(pfc *PacketForwarderConfig) *PacketForwarderConfig {
 				},
 				TxEnable:  true,
 				TxFreqMin: pfc.Radio0.TxFreqMin,
-				TxFreqMax: pfc.Radio0.TxFreqMin,
+				TxFreqMax: pfc.Radio0.TxFreqMax,
 				TxGainLut: pfc.Radio0.TxGainLut,
 			},
 			Radio1: Radio1{
-				Enable:     true,
-				Type:       "SX1250",
-				Freq:       pfc.Radio1.Freq,
-				RssiOffset: -215.4,
+				Enable:          true,
+				Type:            "SX1250",
+				SingleInputMode: pfc.Radio1.SingleInputMode,
+				Freq:            pfc.Radio1.Freq,
+				RssiOffset:      pfc.Radio1.RssiOffset,
 				RssiTcomp: RssiTcomp{
 					CoeffA: 0,
 					CoeffB: 0,
@@ -312,6 +198,8 @@ func FillPacketForwarder(pfc *PacketForwarderConfig) *PacketForwarderConfig {
 			},
 			ChanMultiSFAll: ChanMultiSFAll{
 				SpreadingFactorEnable: []int32{5, 6, 7, 8, 9, 10, 11, 12},
+				Radio:                 0,
+				IF:                    0,
 			},
 			ChanMultiSF0: pfc.ChanMultiSF0,
 			ChanMultiSF1: pfc.ChanMultiSF1,
@@ -350,55 +238,6 @@ func FillPacketForwarder(pfc *PacketForwarderConfig) *PacketForwarderConfig {
 		DebugConf: DebugConf{
 			RefPayload: []RefPayloadItem{{ID: "0xCAFE1234"}, {ID: "0xCAFE2345"}},
 			LogFile:    "loragw_hal.log",
-		},
-	}
-}
-
-func NewGatewayBridge(b *GbBackend) *GatewayBridgeConfig {
-	return &GatewayBridgeConfig{
-		GbBackend: *b,
-		Intergration: Intergration{
-			Marshaler: "protobuf",
-			GbMqtt: GbMqtt{
-				EventTopicTemplate:   "gateway/{{ .GatewayID }}/event/{{ .EventType }}",
-				CommandTopicTemplate: "gateway/{{ .GatewayID }}/command/#",
-				Auth: Auth{
-					Type: "generic",
-					Generic: Generic{
-						Server: "tcp://127.0.0.1:1883",
-					},
-				},
-			},
-		},
-	}
-}
-
-func NewNetworkServerConfig(region string) *NetworkServerConfig {
-	return &NetworkServerConfig{
-		Postgresql: Postgresql{
-			Dsn: "postgres://chirpstack_ns:dfrobot@localhost/chirpstack_ns?sslmode=disable",
-		},
-		Redis: Redis{
-			Url: "redis://localhost:6379",
-		},
-		NetworkServer: NetworkServer{
-			NetId: "000000",
-			Api: Api{
-				Bind: "0.0.0.0:8000",
-			},
-			Band: Band{
-				Name: region,
-			},
-			Gateway: Gateway{
-				NsBackend: NsBackend{
-					Type: "mqtt",
-					NsMqtt: NsMqtt{
-						CommandTopicTemplate: "gateway/{{ .GatewayID }}/command/{{ .CommandType }}",
-						EventTopic:           "gateway/+/event/+",
-						Server:               "tcp://localhost:1883",
-					},
-				},
-			},
 		},
 	}
 }

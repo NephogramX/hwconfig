@@ -8,19 +8,23 @@ import (
 )
 
 type US915 struct {
-	backend int32
+	backend string
 	subband int32
 }
 
-func NewUS915() *US915 {
+func NewBuilder() *US915 {
 	return &US915{}
+}
+
+func (r *US915) SetBackend(b string) {
+	r.backend = b
+}
+
+func (r *US915) SetCustomBand(c hwconfig.CustomBand) {
 }
 
 func (r *US915) SetSubband(fsb int32) {
 	r.subband = fsb
-}
-
-func (r *US915) SetCustomBand(c hwconfig.CustomBand) {
 }
 
 func (r *US915) Build() (*hwconfig.Configs, error) {
@@ -28,8 +32,8 @@ func (r *US915) Build() (*hwconfig.Configs, error) {
 		return nil, errors.New(fmt.Sprint("unknow subband:", r.subband, " in US915"))
 	}
 
-	if r.backend != hwconfig.BasicStationBackend && r.backend != hwconfig.PacketForwarderBackend {
-		return nil, errors.New("unkown gateway backend")
+	if !hwconfig.CheckBackend(r.backend) {
+		return nil, errors.New(fmt.Sprint("unsupported backend: ", r.backend))
 	}
 
 	return &hwconfig.Configs{
@@ -40,7 +44,7 @@ func (r *US915) Build() (*hwconfig.Configs, error) {
 }
 
 func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
-	if r.backend != hwconfig.PacketForwarderBackend {
+	if r.backend != hwconfig.SemtechUDP {
 		return nil
 	}
 
@@ -62,9 +66,11 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 	return hwconfig.FillPacketForwarder(&hwconfig.PacketForwarderConfig{
 		SX130xConfig: hwconfig.SX130xConfig{
 			Radio0: hwconfig.Radio0{
-				Freq:      Radio0Freq,
-				TxFreqMin: 923000000,
-				TxFreqMax: 928000000,
+				SingleInputMode: false,
+				Freq:            Radio0Freq,
+				RssiOffset:      -215.4,
+				TxFreqMin:       923000000,
+				TxFreqMax:       928000000,
 				TxGainLut: []hwconfig.TxGainLutItem{
 					{RFPower: 12, PaGain: 0, PwrIdx: 15},
 					{RFPower: 13, PaGain: 0, PwrIdx: 16},
@@ -85,7 +91,9 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 				},
 			},
 			Radio1: hwconfig.Radio1{
-				Freq: Radio1Freq,
+				SingleInputMode: false,
+				Freq:            Radio1Freq,
+				RssiOffset:      -215.4,
 			},
 			ChanMultiSF0: hwconfig.ChanMultiSF{
 				Enable: true,
@@ -110,22 +118,22 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 			ChanMultiSF4: hwconfig.ChanMultiSF{
 				Enable: true,
 				Radio:  1,
-				IF:     RadioFreqOffsets[0],
+				IF:     RadioFreqOffsets[4],
 			},
 			ChanMultiSF5: hwconfig.ChanMultiSF{
 				Enable: true,
 				Radio:  1,
-				IF:     RadioFreqOffsets[1],
+				IF:     RadioFreqOffsets[5],
 			},
 			ChanMultiSF6: hwconfig.ChanMultiSF{
 				Enable: true,
 				Radio:  1,
-				IF:     RadioFreqOffsets[2],
+				IF:     RadioFreqOffsets[6],
 			},
 			ChanMultiSF7: hwconfig.ChanMultiSF{
 				Enable: true,
 				Radio:  1,
-				IF:     RadioFreqOffsets[3],
+				IF:     RadioFreqOffsets[7],
 			},
 			ChanLoraStd: hwconfig.ChanLoraStd{
 				Enable:                true,
@@ -149,7 +157,7 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 		GateWayConfig: hwconfig.GateWayConfig{
 			BeaconPeriod:   0,
 			BeaconFreqHZ:   869525000,
-			BeaconFreqNB:   0,
+			BeaconFreqNB:   1,
 			BeaconFreqStep: 0,
 			BeaconDatarate: 9,
 			BeaconBwHZ:     125000,
@@ -160,25 +168,42 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 }
 
 func (r *US915) buildGatewayBridge() *hwconfig.GatewayBridgeConfig {
-	var b *hwconfig.GbBackend
+	b := &hwconfig.GbBackend{
+		Type: r.backend,
+	}
 
-	switch r.backend {
-	case hwconfig.BasicStationBackend:
-		b = &hwconfig.GbBackend{
-			Type: "basic_station",
-			BasicStation: hwconfig.BasicStation{
-				Bind: "0.0.0.0:3001",
-			},
+	var frequencies [8]int32
+
+	if r.subband == 9 {
+		for i := range frequencies {
+			frequencies[i] = int32(903000000 + i*1600000)
 		}
-	case hwconfig.PacketForwarderBackend:
-		b = &hwconfig.GbBackend{
-			Type: "semtech_udp",
-			SemtechUdp: hwconfig.SemtechUdp{
-				UdpBind: "0.0.0.0:1700",
-			},
+	} else {
+		for i := range frequencies {
+			frequencies[i] = 902300000 + (r.subband-1)*1600000 + int32(i)*200000
 		}
 	}
 
+	switch r.backend {
+	case hwconfig.BStation:
+		b.SemtechUdp = nil
+		b.BasicStation = &hwconfig.BasicStation{
+			Bind:         "0.0.0.0:3001",
+			Region:       "US915",
+			FrequencyMin: 902300000,
+			FrequencyMax: 927500000,
+			Concentrators: hwconfig.Concentrators{
+				MultiSF: hwconfig.MultiSF{
+					Frequencies: frequencies[:],
+				},
+			},
+		}
+	case hwconfig.SemtechUDP:
+		b.BasicStation = nil
+		b.SemtechUdp = &hwconfig.SemtechUdp{
+			UdpBind: "0.0.0.0:1700",
+		}
+	}
 	return hwconfig.NewGatewayBridge(b)
 }
 
