@@ -135,23 +135,23 @@ type DebugConf struct {
 	LogFile    string           `json:"log_file"`
 }
 
-type PacketForwarderConfig struct {
+type SemtechUdpConfig struct {
 	SX130xConfig  `json:"SX130x_conf"`
 	GateWayConfig `json:"gateway_conf"`
 	DebugConf     `json:"debug_conf"`
 }
 
-func (c *PacketForwarderConfig) Marshal() ([]byte, error) {
+func (c *SemtechUdpConfig) Marshal() ([]byte, error) {
 	jsonData, err := json.MarshalIndent(c, "", "  ")
 	return jsonData, err
 }
 
-func (c *PacketForwarderConfig) IsNil() bool {
+func (c *SemtechUdpConfig) IsNil() bool {
 	return c == nil
 }
 
-func FillPacketForwarder(pfc *PacketForwarderConfig) *PacketForwarderConfig {
-	return &PacketForwarderConfig{
+func fillPacketForwarder(pfc *SemtechUdpConfig) *SemtechUdpConfig {
+	return &SemtechUdpConfig{
 		SX130xConfig: SX130xConfig{
 			ComType:       "SPI",
 			ComPath:       "/dev/spidev2.0",

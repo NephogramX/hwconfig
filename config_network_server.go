@@ -37,17 +37,37 @@ type Gateway struct {
 	NsBackend `toml:"backend"`
 }
 
+type ExtraChannels struct {
+	Frequency int32 `toml:"frequency"`
+	MinDr     int32 `toml:"min_dr"`
+	MaxDr     int32 `toml:"max_dr"`
+}
+
+type NetworkSettings struct {
+	ExtraChannels []ExtraChannels `toml:"extra_channels,omitempty"`
+}
+
 type NetworkServer struct {
-	NetId   string `toml:"net_id"`
-	Api     `toml:"api"`
-	Band    `toml:"band"`
-	Gateway `toml:"gateway"`
+	NetId           string `toml:"net_id"`
+	Api             `toml:"api"`
+	Band            `toml:"band"`
+	Gateway         `toml:"gateway"`
+	NetworkSettings NetworkSettings `toml:"network_settings"`
+}
+
+type Default struct {
+	Server string `toml:"server"`
+}
+
+type JoinServer struct {
+	Default `toml:"default"`
 }
 
 type NetworkServerConfig struct {
 	Postgresql    `toml:"postgresql"`
 	Redis         `toml:"redis"`
 	NetworkServer `toml:"network_server"`
+	JoinServer    `toml:"join_server"`
 }
 
 func (c *NetworkServerConfig) Marshal() ([]byte, error) {
@@ -59,34 +79,4 @@ func (c *NetworkServerConfig) Marshal() ([]byte, error) {
 
 func (c *NetworkServerConfig) IsNil() bool {
 	return c == nil
-}
-
-func NewNetworkServerConfig(region string) *NetworkServerConfig {
-	return &NetworkServerConfig{
-		Postgresql: Postgresql{
-			Dsn: "postgres://chirpstack_ns:dfrobot@localhost/chirpstack_ns?sslmode=disable",
-		},
-		Redis: Redis{
-			Url: "redis://localhost:6379",
-		},
-		NetworkServer: NetworkServer{
-			NetId: "000000",
-			Api: Api{
-				Bind: "0.0.0.0:8000",
-			},
-			Band: Band{
-				Name: region,
-			},
-			Gateway: Gateway{
-				NsBackend: NsBackend{
-					Type: "mqtt",
-					NsMqtt: NsMqtt{
-						CommandTopicTemplate: "gateway/{{ .GatewayID }}/command/{{ .CommandType }}",
-						EventTopic:           "gateway/+/event/+",
-						Server:               "tcp://localhost:1883",
-					},
-				},
-			},
-		},
-	}
 }

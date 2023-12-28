@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/NephogramX/hwconfig"
-	"github.com/NephogramX/hwconfig/us915"
 )
 
 type arr []int
@@ -28,6 +27,16 @@ type Param struct {
 	Subband    int32
 	CustomBand hwconfig.CustomBand
 }
+
+const (
+	packetForwarderPath = "./global_conf.json"
+	gatewayBridgePath   = "./chirpstack-gateway-bridge.toml"
+	networkServerPath   = "./chirpstack-network-server.toml"
+)
+
+var (
+	args Args
+)
 
 func (a *arr) String() string {
 	return fmt.Sprintf("%v", *a)
@@ -71,16 +80,6 @@ func (a *Args) Parse() (*Param, error) {
 	}, nil
 }
 
-const (
-	packetForwarderPath = "./global_conf.json"
-	gatewayBridgePath   = "./chirpstack-gateway-bridge.toml"
-	networkServerPath   = "./chirpstack-network-server.toml"
-)
-
-var (
-	args Args
-)
-
 func update(path string, m hwconfig.Marshaler) error {
 	// can't use "m == nil", the type of interface is not nil while value is nil
 	if m.IsNil() {
@@ -108,44 +107,40 @@ func update(path string, m hwconfig.Marshaler) error {
 
 func init() {
 	flag.StringVar(&args.Region, "r", "EU868", "lorawan region")
-	flag.StringVar(&args.Backend, "b", "pkt_fwd", "backend")
+	flag.StringVar(&args.Backend, "b", "basic_station", "backend")
 	flag.IntVar(&args.Subband, "s", 1, "subband")
 	flag.IntVar(&args.CenterFreq, "c", 0, "custom band center frequency")
 	flag.Var(&args.FreqShift, "f", "custom band frequency shift")
+
+	/* e.g.
+	 * hwconfig.exe -r EU868 -b semtech_udp -c 867500000 -f -400000,-200000,0,200000,400000
+	 * hwconfig.exe -r US915 -b semtech_udp -s 8
+	 * hwconfig.exe -r CN470 -b basic_station -s 1
+	 */
 }
 
 func main() {
+	// Parsing arguments
 	flag.Parse()
 	p, err := args.Parse()
 	if err != nil {
 		panic(err)
 	}
 
-	var (
-		c *hwconfig.Configs
-		b hwconfig.Builder
-	)
-
-	switch p.Region {
-	case "CN470":
-		// b = cn470.NewBuilder()
-	case "EU868":
-		// b = eu868.NewBuilder()
-	case "US915":
-		b = us915.NewBuilder()
-	default:
-		panic("unsupported region")
+	// Build configuration
+	b, err := hwconfig.NewBuilder(p.Region) // support "EU868" "US915" "CN470"
+	if err != nil {
+		panic(err)
 	}
-
-	b.SetSubband(p.Subband)
-	b.SetBackend(p.Backend)
-	b.SetCustomBand(p.CustomBand)
-
-	c, err = b.Build()
+	b.SetSubband(p.Subband)       // only need in CN470 & US915
+	b.SetBackend(p.Backend)       // support "semtech_udp" "basic_station"
+	b.SetCustomBand(p.CustomBand) // only need in EU868
+	c, err := b.Build()
 	if err != nil {
 		panic(err)
 	}
 
+	// Create configuration files
 	UpdateList := []struct {
 		FilePath  string
 		Marshaler hwconfig.Marshaler
@@ -161,6 +156,7 @@ func main() {
 		}
 	}
 
+	// Print
 	fmt.Println("==========================")
 	fmt.Println("region:      ", p.Region)
 	fmt.Println("backend:     ", args.Backend)
@@ -173,4 +169,6 @@ func main() {
 		fmt.Println("subband:     ", p.Subband)
 	}
 	fmt.Println("==========================")
+
+	// Remeber to set the ADR in service profile after switching the region
 }

@@ -1,7 +1,9 @@
 package hwconfig
 
+import "errors"
+
 type Configs struct {
-	PacketForwarder *PacketForwarderConfig
+	PacketForwarder *SemtechUdpConfig
 	GatewayBridge   *GatewayBridgeConfig
 	NetworkServer   *NetworkServerConfig
 }
@@ -36,6 +38,10 @@ type Marshaler interface {
 const (
 	SemtechUDP = "semtech_udp"
 	BStation   = "basic_station"
+
+	CN470 = "CN470"
+	EU868 = "EU868"
+	US915 = "US915"
 )
 
 var (
@@ -43,13 +49,31 @@ var (
 		SemtechUDP,
 		BStation,
 	}
+
+	bandList = []struct {
+		Name   string
+		Struct Builder
+	}{
+		{CN470, &BandCn470{}},
+		{EU868, &BandEu868{}},
+		{US915, &BandUs915{}},
+	}
 )
 
-func CheckBackend(b string) bool {
+func checkBackend(b string) bool {
 	for _, v := range backendList {
 		if v == b {
 			return true
 		}
 	}
 	return false
+}
+
+func NewBuilder(r string) (Builder, error) {
+	for _, v := range bandList {
+		if v.Name == r {
+			return v.Struct, nil
+		}
+	}
+	return nil, errors.New("unsupported region")
 }

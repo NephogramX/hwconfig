@@ -1,50 +1,44 @@
-package us915
+package hwconfig
 
 import (
 	"errors"
 	"fmt"
-
-	"github.com/NephogramX/hwconfig"
 )
 
-type US915 struct {
+type BandUs915 struct {
 	backend string
 	subband int32
 }
 
-func NewBuilder() *US915 {
-	return &US915{}
-}
-
-func (r *US915) SetBackend(b string) {
+func (r *BandUs915) SetBackend(b string) {
 	r.backend = b
 }
 
-func (r *US915) SetCustomBand(c hwconfig.CustomBand) {
+func (r *BandUs915) SetCustomBand(c CustomBand) {
 }
 
-func (r *US915) SetSubband(fsb int32) {
+func (r *BandUs915) SetSubband(fsb int32) {
 	r.subband = fsb
 }
 
-func (r *US915) Build() (*hwconfig.Configs, error) {
+func (r *BandUs915) Build() (*Configs, error) {
 	if r.subband < 0 || r.subband > 9 {
 		return nil, errors.New(fmt.Sprint("unknow subband:", r.subband, " in US915"))
 	}
 
-	if !hwconfig.CheckBackend(r.backend) {
+	if !checkBackend(r.backend) {
 		return nil, errors.New(fmt.Sprint("unsupported backend: ", r.backend))
 	}
 
-	return &hwconfig.Configs{
+	return &Configs{
 		PacketForwarder: r.buildPacketForwarder(),
 		GatewayBridge:   r.buildGatewayBridge(),
 		NetworkServer:   r.buildNetworkServer(),
 	}, nil
 }
 
-func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
-	if r.backend != hwconfig.SemtechUDP {
+func (r *BandUs915) buildPacketForwarder() *SemtechUdpConfig {
+	if r.backend != SemtechUDP {
 		return nil
 	}
 
@@ -59,19 +53,19 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 		RadioFreqOffsets = [8]int32{-3200000, -1600000, 0, 1600000, -3200000, -1600000, 0, 1600000}
 	} else {
 		Radio0Freq = 902300000 + 1600000*(r.subband-1) + 400000
-		Radio1Freq = 902300000 + 1600000*(r.subband-1) + 1000000
-		RadioFreqOffsets = [8]int32{-400000, -2000000, 0, 200000, -400000, -2000000, 0, 200000}
+		Radio1Freq = 902300000 + 1600000*(r.subband-1) + 1200000
+		RadioFreqOffsets = [8]int32{-400000, -200000, 0, 200000, -400000, -200000, 0, 200000}
 	}
 
-	return hwconfig.FillPacketForwarder(&hwconfig.PacketForwarderConfig{
-		SX130xConfig: hwconfig.SX130xConfig{
-			Radio0: hwconfig.Radio0{
+	return fillPacketForwarder(&SemtechUdpConfig{
+		SX130xConfig: SX130xConfig{
+			Radio0: Radio0{
 				SingleInputMode: false,
 				Freq:            Radio0Freq,
 				RssiOffset:      -215.4,
 				TxFreqMin:       923000000,
 				TxFreqMax:       928000000,
-				TxGainLut: []hwconfig.TxGainLutItem{
+				TxGainLut: []TxGainLutItem{
 					{RFPower: 12, PaGain: 0, PwrIdx: 15},
 					{RFPower: 13, PaGain: 0, PwrIdx: 16},
 					{RFPower: 14, PaGain: 0, PwrIdx: 17},
@@ -90,52 +84,52 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 					{RFPower: 27, PaGain: 1, PwrIdx: 14},
 				},
 			},
-			Radio1: hwconfig.Radio1{
+			Radio1: Radio1{
 				SingleInputMode: false,
 				Freq:            Radio1Freq,
 				RssiOffset:      -215.4,
 			},
-			ChanMultiSF0: hwconfig.ChanMultiSF{
+			ChanMultiSF0: ChanMultiSF{
 				Enable: true,
 				Radio:  0,
 				IF:     RadioFreqOffsets[0],
 			},
-			ChanMultiSF1: hwconfig.ChanMultiSF{
+			ChanMultiSF1: ChanMultiSF{
 				Enable: true,
 				Radio:  0,
 				IF:     RadioFreqOffsets[1],
 			},
-			ChanMultiSF2: hwconfig.ChanMultiSF{
+			ChanMultiSF2: ChanMultiSF{
 				Enable: true,
 				Radio:  0,
 				IF:     RadioFreqOffsets[2],
 			},
-			ChanMultiSF3: hwconfig.ChanMultiSF{
+			ChanMultiSF3: ChanMultiSF{
 				Enable: true,
 				Radio:  0,
 				IF:     RadioFreqOffsets[3],
 			},
-			ChanMultiSF4: hwconfig.ChanMultiSF{
+			ChanMultiSF4: ChanMultiSF{
 				Enable: true,
 				Radio:  1,
 				IF:     RadioFreqOffsets[4],
 			},
-			ChanMultiSF5: hwconfig.ChanMultiSF{
+			ChanMultiSF5: ChanMultiSF{
 				Enable: true,
 				Radio:  1,
 				IF:     RadioFreqOffsets[5],
 			},
-			ChanMultiSF6: hwconfig.ChanMultiSF{
+			ChanMultiSF6: ChanMultiSF{
 				Enable: true,
 				Radio:  1,
 				IF:     RadioFreqOffsets[6],
 			},
-			ChanMultiSF7: hwconfig.ChanMultiSF{
+			ChanMultiSF7: ChanMultiSF{
 				Enable: true,
 				Radio:  1,
 				IF:     RadioFreqOffsets[7],
 			},
-			ChanLoraStd: hwconfig.ChanLoraStd{
+			ChanLoraStd: ChanLoraStd{
 				Enable:                true,
 				Radio:                 0,
 				IF:                    300000,
@@ -146,7 +140,7 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 				ImplicitcrcEn:         false,
 				Implicitcoderate:      1,
 			},
-			ChanLoraFSK: hwconfig.ChanLoraFSK{
+			ChanLoraFSK: ChanLoraFSK{
 				Enable:    false,
 				Radio:     1,
 				IF:        300000,
@@ -154,7 +148,7 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 				Datarate:  50000,
 			},
 		},
-		GateWayConfig: hwconfig.GateWayConfig{
+		GateWayConfig: GateWayConfig{
 			BeaconPeriod:   0,
 			BeaconFreqHZ:   869525000,
 			BeaconFreqNB:   1,
@@ -167,8 +161,8 @@ func (r *US915) buildPacketForwarder() *hwconfig.PacketForwarderConfig {
 	})
 }
 
-func (r *US915) buildGatewayBridge() *hwconfig.GatewayBridgeConfig {
-	b := &hwconfig.GbBackend{
+func (r *BandUs915) buildGatewayBridge() *GatewayBridgeConfig {
+	b := &GbBackend{
 		Type: r.backend,
 	}
 
@@ -185,28 +179,76 @@ func (r *US915) buildGatewayBridge() *hwconfig.GatewayBridgeConfig {
 	}
 
 	switch r.backend {
-	case hwconfig.BStation:
+	case BStation:
 		b.SemtechUdp = nil
-		b.BasicStation = &hwconfig.BasicStation{
+		b.BasicStation = &BasicStation{
 			Bind:         "0.0.0.0:3001",
 			Region:       "US915",
 			FrequencyMin: 902300000,
 			FrequencyMax: 927500000,
-			Concentrators: hwconfig.Concentrators{
-				MultiSF: hwconfig.MultiSF{
+			Concentrators: Concentrators{
+				MultiSF: MultiSF{
 					Frequencies: frequencies[:],
 				},
 			},
 		}
-	case hwconfig.SemtechUDP:
+	case SemtechUDP:
 		b.BasicStation = nil
-		b.SemtechUdp = &hwconfig.SemtechUdp{
+		b.SemtechUdp = &SemtechUdp{
 			UdpBind: "0.0.0.0:1700",
 		}
 	}
-	return hwconfig.NewGatewayBridge(b)
+
+	return &GatewayBridgeConfig{
+		GbBackend: *b,
+		Intergration: Intergration{
+			Marshaler: "protobuf",
+			GbMqtt: GbMqtt{
+				EventTopicTemplate:   "gateway/{{ .GatewayID }}/event/{{ .EventType }}",
+				CommandTopicTemplate: "gateway/{{ .GatewayID }}/command/#",
+				Auth: Auth{
+					Type: "generic",
+					Generic: Generic{
+						Server: "tcp://127.0.0.1:1883",
+					},
+				},
+			},
+		},
+	}
 }
 
-func (r *US915) buildNetworkServer() *hwconfig.NetworkServerConfig {
-	return hwconfig.NewNetworkServerConfig("US915")
+func (r *BandUs915) buildNetworkServer() *NetworkServerConfig {
+	return &NetworkServerConfig{
+		Postgresql: Postgresql{
+			Dsn: "postgres://chirpstack_ns:dfrobot@localhost/chirpstack_ns?sslmode=disable",
+		},
+		Redis: Redis{
+			Url: "redis://localhost:6379",
+		},
+		NetworkServer: NetworkServer{
+			NetId: "000000",
+			Api: Api{
+				Bind: "0.0.0.0:8000",
+			},
+			Band: Band{
+				Name: "US915",
+			},
+			Gateway: Gateway{
+				NsBackend: NsBackend{
+					Type: "mqtt",
+					NsMqtt: NsMqtt{
+						CommandTopicTemplate: "gateway/{{ .GatewayID }}/command/{{ .CommandType }}",
+						EventTopic:           "gateway/+/event/+",
+						Server:               "tcp://localhost:1883",
+					},
+				},
+			},
+			NetworkSettings: NetworkSettings{},
+		},
+		JoinServer: JoinServer{
+			Default: Default{
+				Server: "http://localhost:8003",
+			},
+		},
+	}
 }

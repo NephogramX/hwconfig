@@ -67,22 +67,3 @@ func (c *GatewayBridgeConfig) Marshal() ([]byte, error) {
 func (c *GatewayBridgeConfig) IsNil() bool {
 	return c == nil
 }
-
-func NewGatewayBridge(b *GbBackend) *GatewayBridgeConfig {
-	return &GatewayBridgeConfig{
-		GbBackend: *b,
-		Intergration: Intergration{
-			Marshaler: "protobuf",
-			GbMqtt: GbMqtt{
-				EventTopicTemplate:   "gateway/{{ .GatewayID }}/event/{{ .EventType }}",
-				CommandTopicTemplate: "gateway/{{ .GatewayID }}/command/#",
-				Auth: Auth{
-					Type: "generic",
-					Generic: Generic{
-						Server: "tcp://127.0.0.1:1883",
-					},
-				},
-			},
-		},
-	}
-}
