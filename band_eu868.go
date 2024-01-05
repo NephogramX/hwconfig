@@ -122,7 +122,7 @@ func (r *BandEu868) buildPacketForwarder() *SemtechUdpConfig {
 				Implicitcoderate:      1,
 			},
 			ChanLoraFSK: ChanLoraFSK{
-				Enable:    true,
+				Enable:    false,
 				Radio:     1,
 				IF:        300000,
 				Bandwidth: 125000,
@@ -166,6 +166,12 @@ func (r *BandEu868) buildGatewayBridge() *GatewayBridgeConfig {
 						r.customBand.CenterFrequency + r.customBand.FrequencyShift[4],
 					},
 				},
+				LoraStd: &LoraStd{
+					Frequency:       868300000,
+					Bandwidth:       250000,
+					SpreadingFactor: 7,
+				},
+				Fsk: nil,
 			},
 		}
 	case SemtechUDP:

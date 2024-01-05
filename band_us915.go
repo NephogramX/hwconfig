@@ -26,6 +26,10 @@ func (r *BandUs915) Build() (*Configs, error) {
 		return nil, errors.New(fmt.Sprint("unknow subband:", r.subband, " in US915"))
 	}
 
+	if r.subband == 9 {
+		return nil, errors.New("unsupported subband: 9")
+	}
+
 	if !checkBackend(r.backend) {
 		return nil, errors.New(fmt.Sprint("unsupported backend: ", r.backend))
 	}
@@ -42,20 +46,10 @@ func (r *BandUs915) buildPacketForwarder() *SemtechUdpConfig {
 		return nil
 	}
 
-	var (
-		Radio0Freq, Radio1Freq int32
-		RadioFreqOffsets       [8]int32
-	)
-
-	if r.subband == 9 {
-		Radio0Freq = 903000000 + 1600000*2
-		Radio1Freq = 903000000 + 1600000*6
-		RadioFreqOffsets = [8]int32{-3200000, -1600000, 0, 1600000, -3200000, -1600000, 0, 1600000}
-	} else {
-		Radio0Freq = 902300000 + 1600000*(r.subband-1) + 400000
-		Radio1Freq = 902300000 + 1600000*(r.subband-1) + 1200000
-		RadioFreqOffsets = [8]int32{-400000, -200000, 0, 200000, -400000, -200000, 0, 200000}
-	}
+	Radio0Freq := 902300000 + 1600000*(r.subband-1) + 400000
+	Radio1Freq := 902300000 + 1600000*(r.subband-1) + 1200000
+	RadioFreqOffsets := [8]int32{-400000, -200000, 0, 200000, -400000, -200000, 0, 200000}
+	LoRaStdFreqOffset := int32(300000)
 
 	return fillPacketForwarder(&SemtechUdpConfig{
 		SX130xConfig: SX130xConfig{
@@ -130,9 +124,10 @@ func (r *BandUs915) buildPacketForwarder() *SemtechUdpConfig {
 				IF:     RadioFreqOffsets[7],
 			},
 			ChanLoraStd: ChanLoraStd{
-				Enable:                true,
-				Radio:                 0,
-				IF:                    300000,
+				Enable: true,
+				Radio:  0,
+				IF:     LoRaStdFreqOffset,
+				// IF:                    300000,
 				Bandwidth:             500000,
 				SpreadFactor:          8,
 				ImplicitHdr:           false,
@@ -166,18 +161,6 @@ func (r *BandUs915) buildGatewayBridge() *GatewayBridgeConfig {
 		Type: r.backend,
 	}
 
-	var frequencies [8]int32
-
-	if r.subband == 9 {
-		for i := range frequencies {
-			frequencies[i] = int32(903000000 + i*1600000)
-		}
-	} else {
-		for i := range frequencies {
-			frequencies[i] = 902300000 + (r.subband-1)*1600000 + int32(i)*200000
-		}
-	}
-
 	switch r.backend {
 	case BStation:
 		b.SemtechUdp = nil
@@ -188,8 +171,21 @@ func (r *BandUs915) buildGatewayBridge() *GatewayBridgeConfig {
 			FrequencyMax: 927500000,
 			Concentrators: Concentrators{
 				MultiSF: MultiSF{
-					Frequencies: frequencies[:],
+					Frequencies: []int32{
+						902300000 + (r.subband-1)*1600000 + 0*200000,
+						902300000 + (r.subband-1)*1600000 + 1*200000,
+						902300000 + (r.subband-1)*1600000 + 2*200000,
+						902300000 + (r.subband-1)*1600000 + 3*200000,
+						902300000 + (r.subband-1)*1600000 + 4*200000,
+						902300000 + (r.subband-1)*1600000 + 5*200000,
+						902300000 + (r.subband-1)*1600000 + 6*200000,
+						902300000 + (r.subband-1)*1600000 + 7*200000,
+					},
 				},
+				LoraStd: &LoraStd{
+					Frequency: 903000000 + (r.subband-1)*1600000,
+				},
+				Fsk: nil,
 			},
 		}
 	case SemtechUDP:

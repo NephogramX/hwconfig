@@ -115,7 +115,7 @@ func init() {
 	/* e.g.
 	 * hwconfig.exe -r EU868 -b semtech_udp -c 867500000 -f -400000,-200000,0,200000,400000
 	 * hwconfig.exe -r US915 -b semtech_udp -s 8
-	 * hwconfig.exe -r CN470 -b basic_station -s 1
+	 * hwconfig.exe -r CN470 -b basic_station -s 8
 	 */
 }
 

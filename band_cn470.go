@@ -43,14 +43,9 @@ func (r *BandCn470) buildPacketForwarder() *SemtechUdpConfig {
 		return nil
 	}
 
-	var (
-		Radio0Freq, Radio1Freq int32
-		RadioFreqOffsets       [8]int32
-	)
-
-	Radio0Freq = 470300000 + 1600000*(r.subband-1) + 1100000
-	Radio1Freq = 470300000 + 1600000*(r.subband-1) + 300000
-	RadioFreqOffsets = [8]int32{-300000, -100000, 100000, 300000, -300000, -100000, 100000, 300000}
+	Radio0Freq := 470300000 + 1600000*(r.subband-1) + 1100000
+	Radio1Freq := 470300000 + 1600000*(r.subband-1) + 300000
+	RadioFreqOffsets := [8]int32{-300000, -100000, 100000, 300000, -300000, -100000, 100000, 300000}
 
 	return fillPacketForwarder(&SemtechUdpConfig{
 		SX130xConfig: SX130xConfig{
@@ -136,7 +131,7 @@ func (r *BandCn470) buildPacketForwarder() *SemtechUdpConfig {
 				Implicitcoderate:      1,
 			},
 			ChanLoraFSK: ChanLoraFSK{
-				Enable:    true,
+				Enable:    false,
 				Radio:     1,
 				IF:        300000,
 				Bandwidth: 125000,
@@ -178,6 +173,12 @@ func (r *BandCn470) buildGatewayBridge() *GatewayBridgeConfig {
 				MultiSF: MultiSF{
 					Frequencies: frequencies[:],
 				},
+				LoraStd: &LoraStd{
+					Frequency:       470300000 + 1600000*(r.subband-1) + 100000,
+					Bandwidth:       250000,
+					SpreadingFactor: 7,
+				},
+				Fsk: nil,
 			},
 		}
 	case SemtechUDP:

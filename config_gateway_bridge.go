@@ -14,8 +14,20 @@ type MultiSF struct {
 	Frequencies []int32 `toml:"frequencies"`
 }
 
+type LoraStd struct {
+	Frequency       int32 `toml:"frequency"`
+	Bandwidth       int32 `toml:"bandwidth"`
+	SpreadingFactor int32 `toml:"spreading_factor"`
+}
+
+type Fsk struct {
+	Frequency int32 `toml:"frequency"`
+}
+
 type Concentrators struct {
 	MultiSF `toml:"multi_sf"`
+	LoraStd *LoraStd `toml:"lora_std"`
+	Fsk     *Fsk     `toml:"fsk"`
 }
 
 type BasicStation struct {
