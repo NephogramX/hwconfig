@@ -183,7 +183,9 @@ func (r *BandUs915) buildGatewayBridge() *GatewayBridgeConfig {
 					},
 				},
 				LoraStd: &LoraStd{
-					Frequency: 903000000 + (r.subband-1)*1600000,
+					Frequency:       903000000 + (r.subband-1)*1600000,
+					Bandwidth:       500000,
+					SpreadingFactor: 8,
 				},
 				Fsk: nil,
 			},
