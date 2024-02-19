@@ -44,7 +44,8 @@ type ExtraChannels struct {
 }
 
 type NetworkSettings struct {
-	ExtraChannels []ExtraChannels `toml:"extra_channels,omitempty"`
+	ExtraChannels         []ExtraChannels `toml:"extra_channels,omitempty"`
+	EnabledUplinkChannels []int32         `toml:"enabled_uplink_channels,omitempty"`
 }
 
 type NetworkServer struct {

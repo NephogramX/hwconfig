@@ -241,7 +241,19 @@ func (r *BandUs915) buildNetworkServer() *NetworkServerConfig {
 					},
 				},
 			},
-			NetworkSettings: NetworkSettings{},
+			NetworkSettings: NetworkSettings{
+				EnabledUplinkChannels: []int32{
+					(r.subband - 1) * 8,
+					(r.subband-1)*8 + 1,
+					(r.subband-1)*8 + 2,
+					(r.subband-1)*8 + 3,
+					(r.subband-1)*8 + 4,
+					(r.subband-1)*8 + 5,
+					(r.subband-1)*8 + 6,
+					(r.subband-1)*8 + 7,
+					(r.subband - 1) + 64,
+				},
+			},
 		},
 		JoinServer: JoinServer{
 			Default: Default{
