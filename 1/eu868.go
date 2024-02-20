@@ -1,123 +1,114 @@
-package hwconfig
+
 
 import (
 	"errors"
-	"fmt"
 )
 
-type BandCn470 struct {
-	backend string
-	subband int32
-	Builder Builder
+type BandEu868 struct {
+	backend    string
+	customBand CustomBand
+	Builder    Builder
 }
 
-func (r *BandCn470) SetBackend(b string) {
+func (r *BandEu868) SetBackend(b string) {
 	r.backend = b
 }
 
-func (r *BandCn470) SetCustomBand(c CustomBand) {
+func (r *BandEu868) SetCustomBand(c CustomBand) {
+	r.customBand = c
 }
 
-func (r *BandCn470) SetSubband(fsb int32) {
-	r.subband = fsb
+func (r *BandEu868) SetSubband(fsb int32) {
 }
 
-func (r *BandCn470) Build() (*Configs, error) {
-	if r.subband < 0 || r.subband > 9 {
-		return nil, errors.New(fmt.Sprint("unknow subband:", r.subband, " in CN470"))
-	}
-
+func (r *BandEu868) Build() (*HardwareConfig, error) {
 	if !checkBackend(r.backend) {
 		return nil, errors.New("unkown gateway backend")
 	}
 
-	return &Configs{
+	return &HardwareConfig{
 		PacketForwarder: r.buildPacketForwarder(),
 		GatewayBridge:   r.buildGatewayBridge(),
 		NetworkServer:   r.buildNetworkServer(),
 	}, nil
 }
 
-func (r *BandCn470) buildPacketForwarder() *SemtechUdpConfig {
+func (r *BandEu868) buildPacketForwarder() *SemtechUdpConfig {
 	if r.backend != SemtechUDP {
 		return nil
 	}
 
-	Radio0Freq := 470300000 + 1600000*(r.subband-1) + 1100000
-	Radio1Freq := 470300000 + 1600000*(r.subband-1) + 300000
-	RadioFreqOffsets := [8]int32{-300000, -100000, 100000, 300000, -300000, -100000, 100000, 300000}
-
 	return fillPacketForwarder(&SemtechUdpConfig{
 		SX130xConfig: SX130xConfig{
 			Radio0: Radio0{
-				SingleInputMode: true,
-				Freq:            Radio0Freq,
-				RssiOffset:      -207.0,
-				TxFreqMin:       500000000,
-				TxFreqMax:       510000000,
+				SingleInputMode: false,
+				Freq:            r.customBand.CenterFrequency,
+				RssiOffset:      -215.4,
+				TxFreqMin:       863000000,
+				TxFreqMax:       870000000,
 				TxGainLut: []TxGainLutItem{
-					{RFPower: -6, PaGain: 0, PwrIdx: 0},
-					{RFPower: -3, PaGain: 0, PwrIdx: 1},
-					{RFPower: 0, PaGain: 0, PwrIdx: 2},
-					{RFPower: 3, PaGain: 1, PwrIdx: 3},
-					{RFPower: 6, PaGain: 1, PwrIdx: 4},
-					{RFPower: 10, PaGain: 1, PwrIdx: 5},
-					{RFPower: 11, PaGain: 1, PwrIdx: 6},
-					{RFPower: 12, PaGain: 1, PwrIdx: 7},
-					{RFPower: 13, PaGain: 1, PwrIdx: 8},
-					{RFPower: 14, PaGain: 1, PwrIdx: 9},
-					{RFPower: 16, PaGain: 1, PwrIdx: 10},
-					{RFPower: 20, PaGain: 1, PwrIdx: 11},
-					{RFPower: 23, PaGain: 1, PwrIdx: 12},
-					{RFPower: 25, PaGain: 1, PwrIdx: 13},
-					{RFPower: 26, PaGain: 1, PwrIdx: 14},
-					{RFPower: 27, PaGain: 1, PwrIdx: 15},
+					{RFPower: 12, PaGain: 1, PwrIdx: 4},
+					{RFPower: 13, PaGain: 1, PwrIdx: 5},
+					{RFPower: 14, PaGain: 1, PwrIdx: 6},
+					{RFPower: 15, PaGain: 1, PwrIdx: 7},
+					{RFPower: 16, PaGain: 1, PwrIdx: 8},
+					{RFPower: 17, PaGain: 1, PwrIdx: 9},
+					{RFPower: 18, PaGain: 1, PwrIdx: 10},
+					{RFPower: 19, PaGain: 1, PwrIdx: 11},
+					{RFPower: 20, PaGain: 1, PwrIdx: 12},
+					{RFPower: 21, PaGain: 1, PwrIdx: 13},
+					{RFPower: 22, PaGain: 1, PwrIdx: 14},
+					{RFPower: 23, PaGain: 1, PwrIdx: 16},
+					{RFPower: 24, PaGain: 1, PwrIdx: 17},
+					{RFPower: 25, PaGain: 1, PwrIdx: 18},
+					{RFPower: 26, PaGain: 1, PwrIdx: 19},
+					{RFPower: 27, PaGain: 1, PwrIdx: 22},
 				},
 			},
 			Radio1: Radio1{
-				SingleInputMode: true,
-				Freq:            Radio1Freq,
-				RssiOffset:      -207.0,
+				SingleInputMode: false,
+				Freq:            868500000,
+				RssiOffset:      -215.4,
 			},
 			ChanMultiSF0: ChanMultiSF{
 				Enable: true,
-				Radio:  0,
-				IF:     RadioFreqOffsets[0],
+				Radio:  1,
+				IF:     -400000,
 			},
 			ChanMultiSF1: ChanMultiSF{
 				Enable: true,
-				Radio:  0,
-				IF:     RadioFreqOffsets[1],
+				Radio:  1,
+				IF:     -200000,
 			},
 			ChanMultiSF2: ChanMultiSF{
 				Enable: true,
-				Radio:  0,
-				IF:     RadioFreqOffsets[2],
+				Radio:  1,
+				IF:     0,
 			},
 			ChanMultiSF3: ChanMultiSF{
 				Enable: true,
 				Radio:  0,
-				IF:     RadioFreqOffsets[3],
+				IF:     r.customBand.FrequencyShift[0],
 			},
 			ChanMultiSF4: ChanMultiSF{
 				Enable: true,
-				Radio:  1,
-				IF:     RadioFreqOffsets[4],
+				Radio:  0,
+				IF:     r.customBand.FrequencyShift[1],
 			},
 			ChanMultiSF5: ChanMultiSF{
 				Enable: true,
-				Radio:  1,
-				IF:     RadioFreqOffsets[5],
+				Radio:  0,
+				IF:     r.customBand.FrequencyShift[2],
 			},
 			ChanMultiSF6: ChanMultiSF{
 				Enable: true,
-				Radio:  1,
-				IF:     RadioFreqOffsets[6],
+				Radio:  0,
+				IF:     r.customBand.FrequencyShift[3],
 			},
 			ChanMultiSF7: ChanMultiSF{
 				Enable: true,
-				Radio:  1,
-				IF:     RadioFreqOffsets[7],
+				Radio:  0,
+				IF:     r.customBand.FrequencyShift[4],
 			},
 			ChanLoraStd: ChanLoraStd{
 				Enable:                true,
@@ -141,24 +132,19 @@ func (r *BandCn470) buildPacketForwarder() *SemtechUdpConfig {
 		GateWayConfig: GateWayConfig{
 			BeaconPeriod:   0,
 			BeaconFreqHZ:   869525000,
-			BeaconFreqNB:   0,
+			BeaconFreqNB:   1,
 			BeaconFreqStep: 0,
 			BeaconDatarate: 9,
 			BeaconBwHZ:     125000,
-			BeaconPower:    14,
+			BeaconPower:    27,
 			BeaconInfodesc: 0,
 		},
 	})
 }
 
-func (r *BandCn470) buildGatewayBridge() *GatewayBridgeConfig {
+func (r *BandEu868) buildGatewayBridge() *GatewayBridgeConfig {
 	b := &GbBackend{
 		Type: r.backend,
-	}
-
-	var frequencies [8]int32
-	for i := range frequencies {
-		frequencies[i] = 470300000 + (r.subband-1)*1600000 + int32(i)*200000
 	}
 
 	switch r.backend {
@@ -166,15 +152,22 @@ func (r *BandCn470) buildGatewayBridge() *GatewayBridgeConfig {
 		b.SemtechUdp = nil
 		b.BasicStation = &BasicStation{
 			Bind:         "0.0.0.0:3001",
-			Region:       "CN470",
-			FrequencyMin: 470000000,
-			FrequencyMax: 510000000,
+			Region:       "EU868",
+			FrequencyMin: 863000000,
+			FrequencyMax: 870000000,
 			Concentrators: Concentrators{
 				MultiSF: MultiSF{
-					Frequencies: frequencies[:],
+					Frequencies: []int32{
+						868100000, 868300000, 868500000,
+						r.customBand.CenterFrequency + r.customBand.FrequencyShift[0],
+						r.customBand.CenterFrequency + r.customBand.FrequencyShift[1],
+						r.customBand.CenterFrequency + r.customBand.FrequencyShift[2],
+						r.customBand.CenterFrequency + r.customBand.FrequencyShift[3],
+						r.customBand.CenterFrequency + r.customBand.FrequencyShift[4],
+					},
 				},
 				LoraStd: &LoraStd{
-					Frequency:       470300000 + 1600000*(r.subband-1) + 100000,
+					Frequency:       868300000,
 					Bandwidth:       250000,
 					SpreadingFactor: 7,
 				},
@@ -206,7 +199,15 @@ func (r *BandCn470) buildGatewayBridge() *GatewayBridgeConfig {
 	}
 }
 
-func (r *BandCn470) buildNetworkServer() *NetworkServerConfig {
+func (r *BandEu868) buildNetworkServer() *NetworkServerConfig {
+	ec := [5]ExtraChannels{}
+
+	for i := range ec {
+		ec[i].Frequency = r.customBand.CenterFrequency + r.customBand.FrequencyShift[i]
+		ec[i].MinDr = 0
+		ec[i].MaxDr = 5
+	}
+
 	return &NetworkServerConfig{
 		Postgresql: Postgresql{
 			Dsn: "postgres://chirpstack_ns:dfrobot@localhost/chirpstack_ns?sslmode=disable",
@@ -220,7 +221,7 @@ func (r *BandCn470) buildNetworkServer() *NetworkServerConfig {
 				Bind: "0.0.0.0:8000",
 			},
 			Band: Band{
-				Name: "CN470",
+				Name: "EU868",
 			},
 			Gateway: Gateway{
 				NsBackend: NsBackend{
@@ -232,7 +233,9 @@ func (r *BandCn470) buildNetworkServer() *NetworkServerConfig {
 					},
 				},
 			},
-			NetworkSettings: NetworkSettings{},
+			NetworkSettings: NetworkSettings{
+				ExtraChannels: ec[:],
+			},
 		},
 		JoinServer: JoinServer{
 			Default: Default{

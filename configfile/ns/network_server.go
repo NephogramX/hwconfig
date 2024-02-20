@@ -1,4 +1,4 @@
-package hwconfig
+package ns
 
 import (
 	"bytes"
@@ -48,7 +48,7 @@ type NetworkSettings struct {
 	EnabledUplinkChannels []int32         `toml:"enabled_uplink_channels,omitempty"`
 }
 
-type NetworkServer struct {
+type NetworkServer_ struct {
 	NetId           string `toml:"net_id"`
 	Api             `toml:"api"`
 	Band            `toml:"band"`
@@ -64,20 +64,54 @@ type JoinServer struct {
 	Default `toml:"default"`
 }
 
-type NetworkServerConfig struct {
-	Postgresql    `toml:"postgresql"`
-	Redis         `toml:"redis"`
-	NetworkServer `toml:"network_server"`
-	JoinServer    `toml:"join_server"`
+type NetworkServer struct {
+	Postgresql     `toml:"postgresql"`
+	Redis          `toml:"redis"`
+	NetworkServer_ `toml:"network_server"`
+	JoinServer     `toml:"join_server"`
 }
 
-func (c *NetworkServerConfig) Marshal() ([]byte, error) {
+func (c *NetworkServer) Marshal() ([]byte, error) {
 	var buf bytes.Buffer
 	encoder := toml.NewEncoder(&buf)
 	err := encoder.Encode(c)
 	return buf.Bytes(), err
 }
 
-func (c *NetworkServerConfig) IsNil() bool {
+func (c *NetworkServer) IsNil() bool {
 	return c == nil
+}
+
+func NewNetworkServer() *NetworkServer {
+	return &NetworkServer{
+		Postgresql: Postgresql{
+			Dsn: "postgres://chirpstack_ns:dfrobot@localhost/chirpstack_ns?sslmode=disable",
+		},
+		Redis: Redis{
+			Url: "redis://localhost:6379",
+		},
+		NetworkServer_: NetworkServer_{
+			NetId: "000000",
+			Api: Api{
+				Bind: "0.0.0.0:8000",
+			},
+			Band: Band{},
+			Gateway: Gateway{
+				NsBackend: NsBackend{
+					Type: "mqtt",
+					NsMqtt: NsMqtt{
+						CommandTopicTemplate: "gateway/{{ .GatewayID }}/command/{{ .CommandType }}",
+						EventTopic:           "gateway/+/event/+",
+						Server:               "tcp://localhost:1883",
+					},
+				},
+			},
+			NetworkSettings: NetworkSettings{},
+		},
+		JoinServer: JoinServer{
+			Default: Default{
+				Server: "http://localhost:8003",
+			},
+		},
+	}
 }

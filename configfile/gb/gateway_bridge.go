@@ -1,4 +1,4 @@
-package hwconfig
+package gb
 
 import (
 	"bytes"
@@ -38,7 +38,7 @@ type BasicStation struct {
 	Concentrators `toml:"concentrators"`
 }
 
-type GbBackend struct {
+type Backend struct {
 	Type         string        `toml:"type"`
 	SemtechUdp   *SemtechUdp   `toml:"semtech_udp, omitempty"`
 	BasicStation *BasicStation `toml:"basic_station, omitempty"`
@@ -53,7 +53,7 @@ type Auth struct {
 	Generic `toml:"generic"`
 }
 
-type GbMqtt struct {
+type Mqtt struct {
 	EventTopicTemplate   string `toml:"event_topic_template"`
 	CommandTopicTemplate string `toml:"command_topic_template"`
 	Auth                 `toml:"auth"`
@@ -61,21 +61,39 @@ type GbMqtt struct {
 
 type Intergration struct {
 	Marshaler string `toml:"marshaler"`
-	GbMqtt    `toml:"gb_mqtt"`
+	Mqtt      `toml:"gb_mqtt"`
 }
 
-type GatewayBridgeConfig struct {
-	GbBackend    `toml:"backend"`
+type GatewayBridge struct {
+	Backend      `toml:"backend"`
 	Intergration `toml:"intergration"`
 }
 
-func (c *GatewayBridgeConfig) Marshal() ([]byte, error) {
+func (c *GatewayBridge) Marshal() ([]byte, error) {
 	var buf bytes.Buffer
 	encoder := toml.NewEncoder(&buf)
 	err := encoder.Encode(c)
 	return buf.Bytes(), err
 }
 
-func (c *GatewayBridgeConfig) IsNil() bool {
+func (c *GatewayBridge) IsNil() bool {
 	return c == nil
+}
+
+func NewGatewayBridge() *GatewayBridge {
+	return &GatewayBridge{
+		Intergration: Intergration{
+			Marshaler: "protobuf",
+			Mqtt: Mqtt{
+				EventTopicTemplate:   "gateway/{{ .GatewayID }}/event/{{ .EventType }}",
+				CommandTopicTemplate: "gateway/{{ .GatewayID }}/command/#",
+				Auth: Auth{
+					Type: "generic",
+					Generic: Generic{
+						Server: "tcp://127.0.0.1:1883",
+					},
+				},
+			},
+		},
+	}
 }

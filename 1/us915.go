@@ -1,4 +1,4 @@
-package hwconfig
+
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ func (r *BandUs915) SetSubband(fsb int32) {
 	r.subband = fsb
 }
 
-func (r *BandUs915) Build() (*Configs, error) {
+func (r *BandUs915) Build() (*HardwareConfig, error) {
 	if r.subband < 0 || r.subband > 9 {
 		return nil, errors.New(fmt.Sprint("unknow subband:", r.subband, " in US915"))
 	}
@@ -34,7 +34,7 @@ func (r *BandUs915) Build() (*Configs, error) {
 		return nil, errors.New(fmt.Sprint("unsupported backend: ", r.backend))
 	}
 
-	return &Configs{
+	return &HardwareConfig{
 		PacketForwarder: r.buildPacketForwarder(),
 		GatewayBridge:   r.buildGatewayBridge(),
 		NetworkServer:   r.buildNetworkServer(),

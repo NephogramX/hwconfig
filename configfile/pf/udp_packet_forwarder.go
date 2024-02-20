@@ -1,4 +1,4 @@
-package hwconfig
+package pf
 
 import "encoding/json"
 
@@ -135,23 +135,14 @@ type DebugConf struct {
 	LogFile    string           `json:"log_file"`
 }
 
-type SemtechUdpConfig struct {
+type UdpPacketForwarder struct {
 	SX130xConfig  `json:"SX130x_conf"`
 	GateWayConfig `json:"gateway_conf"`
 	DebugConf     `json:"debug_conf"`
 }
 
-func (c *SemtechUdpConfig) Marshal() ([]byte, error) {
-	jsonData, err := json.MarshalIndent(c, "", "  ")
-	return jsonData, err
-}
-
-func (c *SemtechUdpConfig) IsNil() bool {
-	return c == nil
-}
-
-func fillPacketForwarder(pfc *SemtechUdpConfig) *SemtechUdpConfig {
-	return &SemtechUdpConfig{
+func NewUdpPacketForwarder() *UdpPacketForwarder {
+	return &UdpPacketForwarder{
 		SX130xConfig: SX130xConfig{
 			ComType:       "SPI",
 			ComPath:       "/dev/spidev2.0",
@@ -164,11 +155,11 @@ func fillPacketForwarder(pfc *SemtechUdpConfig) *SemtechUdpConfig {
 				Mode:   "all_sf",
 			},
 			Radio0: Radio0{
-				Enable:          true,
-				Type:            "SX1250",
-				SingleInputMode: pfc.Radio0.SingleInputMode,
-				Freq:            pfc.Radio0.Freq,
-				RssiOffset:      pfc.Radio0.RssiOffset,
+				Enable: true,
+				Type:   "SX1250",
+				// SingleInputMode: pfc.Radio0.SingleInputMode,
+				// Freq:            pfc.Radio0.Freq,
+				// RssiOffset:      pfc.Radio0.RssiOffset,
 				RssiTcomp: RssiTcomp{
 					CoeffA: 0,
 					CoeffB: 0,
@@ -176,17 +167,17 @@ func fillPacketForwarder(pfc *SemtechUdpConfig) *SemtechUdpConfig {
 					CoeffD: 2162.56,
 					CoeffE: 0,
 				},
-				TxEnable:  true,
-				TxFreqMin: pfc.Radio0.TxFreqMin,
-				TxFreqMax: pfc.Radio0.TxFreqMax,
-				TxGainLut: pfc.Radio0.TxGainLut,
+				TxEnable: true,
+				// TxFreqMin: pfc.Radio0.TxFreqMin,
+				// TxFreqMax: pfc.Radio0.TxFreqMax,
+				// TxGainLut: pfc.Radio0.TxGainLut,
 			},
 			Radio1: Radio1{
-				Enable:          true,
-				Type:            "SX1250",
-				SingleInputMode: pfc.Radio1.SingleInputMode,
-				Freq:            pfc.Radio1.Freq,
-				RssiOffset:      pfc.Radio1.RssiOffset,
+				Enable: true,
+				Type:   "SX1250",
+				// SingleInputMode: pfc.Radio1.SingleInputMode,
+				// Freq:            pfc.Radio1.Freq,
+				// RssiOffset:      pfc.Radio1.RssiOffset,
 				RssiTcomp: RssiTcomp{
 					CoeffA: 0,
 					CoeffB: 0,
@@ -201,22 +192,22 @@ func fillPacketForwarder(pfc *SemtechUdpConfig) *SemtechUdpConfig {
 				Radio:                 0,
 				IF:                    0,
 			},
-			ChanMultiSF0: pfc.ChanMultiSF0,
-			ChanMultiSF1: pfc.ChanMultiSF1,
-			ChanMultiSF2: pfc.ChanMultiSF2,
-			ChanMultiSF3: pfc.ChanMultiSF3,
-			ChanMultiSF4: pfc.ChanMultiSF4,
-			ChanMultiSF5: pfc.ChanMultiSF5,
-			ChanMultiSF6: pfc.ChanMultiSF6,
-			ChanMultiSF7: pfc.ChanMultiSF7,
-			ChanLoraStd:  pfc.ChanLoraStd,
-			ChanLoraFSK:  pfc.ChanLoraFSK,
+			// ChanMultiSF0: pfc.ChanMultiSF0,
+			// ChanMultiSF1: pfc.ChanMultiSF1,
+			// ChanMultiSF2: pfc.ChanMultiSF2,
+			// ChanMultiSF3: pfc.ChanMultiSF3,
+			// ChanMultiSF4: pfc.ChanMultiSF4,
+			// ChanMultiSF5: pfc.ChanMultiSF5,
+			// ChanMultiSF6: pfc.ChanMultiSF6,
+			// ChanMultiSF7: pfc.ChanMultiSF7,
+			// ChanLoraStd:  pfc.ChanLoraStd,
+			// ChanLoraFSK:  pfc.ChanLoraFSK,
 		},
 		GateWayConfig: GateWayConfig{
-			GatewayID:          "0000000000000000",
-			ServerAddress:      "localhost",
-			ServPortUp:         1700,
-			ServPortDown:       1700,
+			GatewayID: "0000000000000000",
+			// ServerAddress:      "localhost",
+			// ServPortUp:         1700,
+			// ServPortDown:       1700,
 			KeepaliveInterval:  10,
 			StatInterval:       30,
 			PushTimeoutMs:      100,
@@ -226,18 +217,27 @@ func fillPacketForwarder(pfc *SemtechUdpConfig) *SemtechUdpConfig {
 			RefLatitude:        0.0,
 			RefLongitude:       0.0,
 			RefAltitude:        0,
-			BeaconPeriod:       pfc.BeaconPeriod,
-			BeaconFreqHZ:       pfc.BeaconFreqHZ,
-			BeaconFreqNB:       pfc.BeaconFreqNB,
-			BeaconFreqStep:     pfc.BeaconFreqStep,
-			BeaconDatarate:     pfc.BeaconDatarate,
-			BeaconBwHZ:         pfc.BeaconBwHZ,
-			BeaconPower:        pfc.BeaconPower,
-			BeaconInfodesc:     pfc.BeaconInfodesc,
+			// BeaconPeriod:       pfc.BeaconPeriod,
+			// BeaconFreqHZ:       pfc.BeaconFreqHZ,
+			// BeaconFreqNB:       pfc.BeaconFreqNB,
+			// BeaconFreqStep:     pfc.BeaconFreqStep,
+			// BeaconDatarate:     pfc.BeaconDatarate,
+			// BeaconBwHZ:         pfc.BeaconBwHZ,
+			// BeaconPower:        pfc.BeaconPower,
+			// BeaconInfodesc:     pfc.BeaconInfodesc,
 		},
 		DebugConf: DebugConf{
 			RefPayload: []RefPayloadItem{{ID: "0xCAFE1234"}, {ID: "0xCAFE2345"}},
 			LogFile:    "loragw_hal.log",
 		},
 	}
+}
+
+func (c *UdpPacketForwarder) Marshal() ([]byte, error) {
+	jsonData, err := json.MarshalIndent(c, "", "  ")
+	return jsonData, err
+}
+
+func (c *UdpPacketForwarder) IsNil() bool {
+	return c == nil
 }

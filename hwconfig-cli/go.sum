@@ -2,3 +2,5 @@ github.com/BurntSushi/toml v1.3.2 h1:o7IhLm0Msx3BaB+n3Ag7L8EVlByGnpq14C4YWiu/gL8
 github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/NephogramX/hwconfig v0.0.0-20231225023832-3f182f8142c2 h1:EFo+syb/XBUmPKD5C3dAcJr6KkIZpOIj2ctXhyySC6Y=
 github.com/NephogramX/hwconfig v0.0.0-20231225023832-3f182f8142c2/go.mod h1:ldhTicpBtExijhSbC8trkQfy+j6WByjQh3pY2r6FImI=
+github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
+github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

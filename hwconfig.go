@@ -1,79 +1,119 @@
 package hwconfig
 
-import "errors"
+import (
+	"fmt"
 
-type Configs struct {
-	PacketForwarder *SemtechUdpConfig
-	GatewayBridge   *GatewayBridgeConfig
-	NetworkServer   *NetworkServerConfig
-}
+	"github.com/pkg/errors"
 
-type CustomBand struct {
-	CenterFrequency int32
-	FrequencyShift  [5]int32
-}
+	"github.com/NephogramX/hwconfig/band"
+	"github.com/NephogramX/hwconfig/configfile/gb"
+	"github.com/NephogramX/hwconfig/configfile/ns"
+	"github.com/NephogramX/hwconfig/configfile/pf"
+	"github.com/NephogramX/hwconfig/integration"
+)
 
-type Builder interface {
-	// Build create a new config based on region & backend，the config will be nil if no change
-	Build() (*Configs, error)
+type Region = band.Region
+type Integration = integration.Integration
 
-	// SetBackend sets the gateway backend (PacketForwarderBackend/BasicStationBackend), default is PacketForwarder
-	SetBackend(b string)
-
-	// SetCustomBand sets the EU868 custom band
-	SetCustomBand(c CustomBand)
-
-	// SetSubband sets CN470 & US915's subband, default is 0
-	SetSubband(fsb int32)
-}
-
-type Marshaler interface {
-	// Backend configuration marshal
-	Marshal() ([]byte, error)
-
-	// Check if the struct value is nil
-	IsNil() bool
-}
+type Backend int32
 
 const (
-	SemtechUDP = "semtech_udp"
-	BStation   = "basic_station"
-
-	CN470 = "CN470"
-	EU868 = "EU868"
-	US915 = "US915"
+	UdpPacketForwarder Backend = iota
+	BasicStation       Backend = iota
 )
 
-var (
-	backendList = []string{
-		SemtechUDP,
-		BStation,
-	}
-
-	bandList = []struct {
-		Name   string
-		Struct Builder
-	}{
-		{CN470, &BandCn470{}},
-		{EU868, &BandEu868{}},
-		{US915, &BandUs915{}},
-	}
-)
-
-func checkBackend(b string) bool {
-	for _, v := range backendList {
-		if v == b {
-			return true
-		}
-	}
-	return false
+type Builder struct {
+	band        band.Band
+	region      Region
+	backend     Backend
+	integration integration.Integration
 }
 
-func NewBuilder(r string) (Builder, error) {
-	for _, v := range bandList {
-		if v.Name == r {
-			return v.Struct, nil
+type ConfigFile struct {
+	PacketForwarder *pf.UdpPacketForwarder
+	GatewayBridge   *gb.GatewayBridge
+	NetworkServer   *ns.NetworkServer
+}
+
+func NewBuilder() *Builder {
+	return &Builder{}
+}
+
+func (b *Builder) SetRegion(r band.Region) error {
+	var err error = nil
+	switch r {
+	case band.EU868:
+	case band.US915:
+	case band.CN470:
+	default:
+		err = errors.New(fmt.Sprint("unsupported region:", r))
+	}
+	b.region = r
+	return err
+}
+
+func (b *Builder) SetSubband(subbandIndex int32) error {
+	var err error = nil
+	switch b.region {
+	case band.EU868:
+	case band.US915:
+	case band.CN470:
+		b.band, err = band.NewBandCN470(subbandIndex)
+	default:
+		err = errors.New(fmt.Sprint("unsupported region:", b.region))
+	}
+	return err
+}
+
+func (b *Builder) SetCustomBand(centerFrequency int32, frequencyShift [5]int32) error {
+	return nil
+}
+
+func (b *Builder) SetBackend(be Backend) error {
+	switch be {
+	case UdpPacketForwarder:
+		b.backend = be
+	case BasicStation:
+		b.backend = be
+	default:
+		return errors.New(fmt.Sprint("unsupported backend:", be))
+	}
+	return nil
+}
+
+func (b *Builder) SetIntegration(i integration.Integration) error {
+	b.integration = i
+	return nil
+}
+
+func (b *Builder) Build() (*ConfigFile, error) {
+	var cf ConfigFile
+
+	if b.backend == UdpPacketForwarder {
+		cf.PacketForwarder = pf.NewUdpPacketForwarder()
+		if err := b.band.HandleUdpPacketForwarder(cf.PacketForwarder); err != nil {
+			return nil, err
+		}
+		if err := b.integration.HandleUdpPacketForwarder(cf.PacketForwarder); err != nil {
+			return nil, err
+		}
+	} else if b.backend == BasicStation {
+		if err := b.integration.HandleBasicStation(); err != nil {
+			return nil, err
 		}
 	}
-	return nil, errors.New("unsupported region")
+
+	if b.integration.Get() == integration.Buildin {
+		cf.GatewayBridge = gb.NewGatewayBridge()
+		if err := b.band.HandleGatewayBridge(cf.GatewayBridge); err != nil {
+			return nil, err
+		}
+
+		cf.NetworkServer = ns.NewNetworkServer()
+		if err := b.band.HandleNetworkServer(cf.NetworkServer); err != nil {
+			return nil, err
+		}
+	}
+
+	return &cf, nil
 }
