@@ -1,9 +1,14 @@
-package gb
+package configfile
 
 import (
 	"bytes"
 
 	"github.com/BurntSushi/toml"
+)
+
+const (
+	SemtechUDP    = "semtech_udp"
+	BasicsStation = "basic_station"
 )
 
 type SemtechUdp struct {
@@ -69,6 +74,10 @@ type GatewayBridge struct {
 	Intergration `toml:"intergration"`
 }
 
+type GBSettings struct {
+	Backend
+}
+
 func (c *GatewayBridge) Marshal() ([]byte, error) {
 	var buf bytes.Buffer
 	encoder := toml.NewEncoder(&buf)
@@ -80,8 +89,9 @@ func (c *GatewayBridge) IsNil() bool {
 	return c == nil
 }
 
-func NewGatewayBridge() *GatewayBridge {
+func NewGatewayBridge(s *GBSettings) *GatewayBridge {
 	return &GatewayBridge{
+		Backend: s.Backend,
 		Intergration: Intergration{
 			Marshaler: "protobuf",
 			Mqtt: Mqtt{

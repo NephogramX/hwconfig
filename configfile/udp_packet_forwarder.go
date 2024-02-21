@@ -1,6 +1,10 @@
-package pf
+package configfile
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
+
+// global_config.json
 
 type FineTimeStamp struct {
 	Enable bool   `json:"enable"`
@@ -101,29 +105,29 @@ type SX130xConfig struct {
 }
 
 type GateWayConfig struct {
-	GatewayID          string  `json:"gateway_ID"`
-	ServerAddress      string  `json:"server_address"`
-	ServPortUp         int32   `json:"serv_port_up"`
-	ServPortDown       int32   `json:"serv_port_down"`
-	KeepaliveInterval  int32   `json:"keepalive_interval"`
-	StatInterval       int32   `json:"stat_interval"`
-	PushTimeoutMs      int32   `json:"push_timeout_ms"`
-	ForwardCrcValid    bool    `json:"forward_crc_valid"`
-	ForwardCrcError    bool    `json:"forward_crc_error"`
-	ForwardCrcDisabled bool    `json:"forward_crc_disabled"`
-	GPSTTYPath         string  `json:"gps_tty_path"`
-	RefLatitude        float32 `json:"ref_latitude"`
-	RefLongitude       float32 `json:"ref_longitude"`
-	RefAltitude        int32   `json:"ref_altitude"`
-	AutoquitThreshold  int32   `json:"autoquit_threshold"`
-	BeaconPeriod       int32   `json:"beacon_period"`
-	BeaconFreqHZ       int32   `json:"beacon_freq_hz"`
-	BeaconFreqNB       int32   `json:"beacon_freq_nb"`
-	BeaconFreqStep     int32   `json:"beacon_freq_step"`
-	BeaconDatarate     int32   `json:"beacon_datarate"`
-	BeaconBwHZ         int32   `json:"beacon_bw_hz"`
-	BeaconPower        int32   `json:"beacon_power"`
-	BeaconInfodesc     int32   `json:"beacon_infodesc"`
+	GatewayID          string `json:"gateway_ID"`
+	ServerAddress      string `json:"server_address"`
+	ServPortUp         int32  `json:"serv_port_up"`
+	ServPortDown       int32  `json:"serv_port_down"`
+	KeepaliveInterval  int32  `json:"keepalive_interval"`
+	StatInterval       int32  `json:"stat_interval"`
+	PushTimeoutMs      int32  `json:"push_timeout_ms"`
+	ForwardCrcValid    bool   `json:"forward_crc_valid"`
+	ForwardCrcError    bool   `json:"forward_crc_error"`
+	ForwardCrcDisabled bool   `json:"forward_crc_disabled"`
+	// GPSTTYPath         string  `json:"gps_tty_path"`
+	// RefLatitude        float32 `json:"ref_latitude"`
+	// RefLongitude       float32 `json:"ref_longitude"`
+	// RefAltitude        int32   `json:"ref_altitude"`
+	// AutoquitThreshold  int32   `json:"autoquit_threshold"`
+	// BeaconPeriod       int32   `json:"beacon_period"`
+	// BeaconFreqHZ       int32   `json:"beacon_freq_hz"`
+	// BeaconFreqNB       int32   `json:"beacon_freq_nb"`
+	// BeaconFreqStep     int32   `json:"beacon_freq_step"`
+	// BeaconDatarate     int32   `json:"beacon_datarate"`
+	// BeaconBwHZ         int32   `json:"beacon_bw_hz"`
+	// BeaconPower        int32   `json:"beacon_power"`
+	// BeaconInfodesc     int32   `json:"beacon_infodesc"`
 }
 
 type RefPayloadItem struct {
@@ -138,10 +142,55 @@ type DebugConf struct {
 type UdpPacketForwarder struct {
 	SX130xConfig  `json:"SX130x_conf"`
 	GateWayConfig `json:"gateway_conf"`
-	DebugConf     `json:"debug_conf"`
+	// DebugConf     `json:"debug_conf"`
 }
 
-func NewUdpPacketForwarder() *UdpPacketForwarder {
+// channel settings
+
+type ChanLoRaStd struct {
+	ChanMultiSF
+	Bandwidth    int32
+	SpreadFactor int32
+}
+
+type ChanLoRaFSK struct {
+	ChanMultiSF
+	Bandwidth int32
+	Datarate  int32
+}
+
+type Channel struct {
+	RaidoCneterFrequency [2]int32
+	MinTxFrequency       int32
+	MaxTxFrequency       int32
+	RssiOffset           float32
+	ChanMultiSF          [8]ChanMultiSF
+	ChanLoRaStd          ChanLoRaStd
+	ChanLoRaFsk          ChanLoRaFSK
+	TxGainLutItem        []TxGainLutItem
+}
+
+// server settings
+type Server struct {
+	Address  string
+	PortUp   int32
+	PortDown int32
+}
+
+type Comm struct {
+	PushTimeoutMs        int32
+	StatIntervalSec      int32
+	KeepaliveIntervalSec int32
+}
+
+// lora_pkt_fwd settings
+type PFSettings struct {
+	Channel
+	Server
+	Comm
+}
+
+func NewUdpPacketForwarderCF(s *PFSettings) *UdpPacketForwarder {
 	return &UdpPacketForwarder{
 		SX130xConfig: SX130xConfig{
 			ComType:       "SPI",
@@ -155,11 +204,11 @@ func NewUdpPacketForwarder() *UdpPacketForwarder {
 				Mode:   "all_sf",
 			},
 			Radio0: Radio0{
-				Enable: true,
-				Type:   "SX1250",
-				// SingleInputMode: pfc.Radio0.SingleInputMode,
-				// Freq:            pfc.Radio0.Freq,
-				// RssiOffset:      pfc.Radio0.RssiOffset,
+				Enable:          true,
+				Type:            "SX1250",
+				SingleInputMode: true,
+				Freq:            s.RaidoCneterFrequency[0],
+				RssiOffset:      s.RssiOffset,
 				RssiTcomp: RssiTcomp{
 					CoeffA: 0,
 					CoeffB: 0,
@@ -167,17 +216,17 @@ func NewUdpPacketForwarder() *UdpPacketForwarder {
 					CoeffD: 2162.56,
 					CoeffE: 0,
 				},
-				TxEnable: true,
-				// TxFreqMin: pfc.Radio0.TxFreqMin,
-				// TxFreqMax: pfc.Radio0.TxFreqMax,
-				// TxGainLut: pfc.Radio0.TxGainLut,
+				TxEnable:  true,
+				TxFreqMin: s.MinTxFrequency,
+				TxFreqMax: s.MaxTxFrequency,
+				TxGainLut: s.TxGainLutItem,
 			},
 			Radio1: Radio1{
-				Enable: true,
-				Type:   "SX1250",
-				// SingleInputMode: pfc.Radio1.SingleInputMode,
-				// Freq:            pfc.Radio1.Freq,
-				// RssiOffset:      pfc.Radio1.RssiOffset,
+				Enable:          true,
+				Type:            "SX1250",
+				SingleInputMode: true,
+				Freq:            s.RaidoCneterFrequency[1],
+				RssiOffset:      s.RssiOffset,
 				RssiTcomp: RssiTcomp{
 					CoeffA: 0,
 					CoeffB: 0,
@@ -192,31 +241,47 @@ func NewUdpPacketForwarder() *UdpPacketForwarder {
 				Radio:                 0,
 				IF:                    0,
 			},
-			// ChanMultiSF0: pfc.ChanMultiSF0,
-			// ChanMultiSF1: pfc.ChanMultiSF1,
-			// ChanMultiSF2: pfc.ChanMultiSF2,
-			// ChanMultiSF3: pfc.ChanMultiSF3,
-			// ChanMultiSF4: pfc.ChanMultiSF4,
-			// ChanMultiSF5: pfc.ChanMultiSF5,
-			// ChanMultiSF6: pfc.ChanMultiSF6,
-			// ChanMultiSF7: pfc.ChanMultiSF7,
-			// ChanLoraStd:  pfc.ChanLoraStd,
-			// ChanLoraFSK:  pfc.ChanLoraFSK,
+			ChanMultiSF0: s.ChanMultiSF[0],
+			ChanMultiSF1: s.ChanMultiSF[1],
+			ChanMultiSF2: s.ChanMultiSF[2],
+			ChanMultiSF3: s.ChanMultiSF[3],
+			ChanMultiSF4: s.ChanMultiSF[4],
+			ChanMultiSF5: s.ChanMultiSF[5],
+			ChanMultiSF6: s.ChanMultiSF[6],
+			ChanMultiSF7: s.ChanMultiSF[7],
+			ChanLoraStd: ChanLoraStd{
+				Enable:                s.ChanLoRaStd.Enable,
+				Radio:                 s.ChanLoRaStd.Radio,
+				IF:                    s.ChanLoRaStd.IF,
+				Bandwidth:             s.ChanLoRaStd.Bandwidth,
+				SpreadFactor:          s.ChanLoRaStd.SpreadFactor,
+				ImplicitHdr:           false,
+				Implicitpayloadlength: 17,
+				ImplicitcrcEn:         false,
+				Implicitcoderate:      1,
+			},
+			ChanLoraFSK: ChanLoraFSK{
+				Enable:    s.ChanLoRaFsk.Enable,
+				Radio:     s.ChanLoRaFsk.Radio,
+				IF:        s.ChanLoRaFsk.IF,
+				Bandwidth: s.ChanLoRaFsk.Bandwidth,
+				Datarate:  s.ChanLoRaFsk.Datarate,
+			},
 		},
 		GateWayConfig: GateWayConfig{
-			GatewayID: "0000000000000000",
-			// ServerAddress:      "localhost",
-			// ServPortUp:         1700,
-			// ServPortDown:       1700,
-			KeepaliveInterval:  10,
-			StatInterval:       30,
-			PushTimeoutMs:      100,
+			GatewayID:          "0000000000000000",
+			ServerAddress:      s.Address,
+			ServPortUp:         s.PortUp,
+			ServPortDown:       s.PortDown,
+			KeepaliveInterval:  s.KeepaliveIntervalSec,
+			StatInterval:       s.StatIntervalSec,
+			PushTimeoutMs:      s.PushTimeoutMs,
 			ForwardCrcValid:    true,
 			ForwardCrcError:    false,
 			ForwardCrcDisabled: false,
-			RefLatitude:        0.0,
-			RefLongitude:       0.0,
-			RefAltitude:        0,
+			// RefLatitude:        0.0,
+			// RefLongitude:       0.0,
+			// RefAltitude:        0,
 			// BeaconPeriod:       pfc.BeaconPeriod,
 			// BeaconFreqHZ:       pfc.BeaconFreqHZ,
 			// BeaconFreqNB:       pfc.BeaconFreqNB,
@@ -226,10 +291,10 @@ func NewUdpPacketForwarder() *UdpPacketForwarder {
 			// BeaconPower:        pfc.BeaconPower,
 			// BeaconInfodesc:     pfc.BeaconInfodesc,
 		},
-		DebugConf: DebugConf{
-			RefPayload: []RefPayloadItem{{ID: "0xCAFE1234"}, {ID: "0xCAFE2345"}},
-			LogFile:    "loragw_hal.log",
-		},
+		// DebugConf: DebugConf{
+		// 	RefPayload: []RefPayloadItem{{ID: "0xCAFE1234"}, {ID: "0xCAFE2345"}},
+		// 	LogFile:    "loragw_hal.log",
+		// },
 	}
 }
 

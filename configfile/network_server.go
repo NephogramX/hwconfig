@@ -1,4 +1,4 @@
-package ns
+package configfile
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// configfile
 type Postgresql struct {
 	Dsn string `toml:"dsn"`
 }
@@ -44,16 +45,25 @@ type ExtraChannels struct {
 }
 
 type NetworkSettings struct {
-	ExtraChannels         []ExtraChannels `toml:"extra_channels,omitempty"`
-	EnabledUplinkChannels []int32         `toml:"enabled_uplink_channels,omitempty"`
+	InstallationMargin int32 `toml:"installation_margin"`
+	RxWindow           int32 `toml:"rx_window"`
+	Rx1Delay           int32 `toml:"rx1_delay"`
+	Rx1DROffset        int32 `toml:"rx1_dr_offset"`
+	Rx2DR              int32 `toml:"rx2_dr"`
+	Rx2Frequency       int32 `toml:"rx2_frequency"`
+	DownlinkTxPower    int32 `toml:"downlink_tx_power"`
+	DisableADR         bool  `toml:"disable_adr"`
+
+	ExtraChannels         *[]ExtraChannels `toml:"extra_channels,omitempty"`
+	EnabledUplinkChannels *[]int32         `toml:"enabled_uplink_channels,omitempty"`
 }
 
-type NetworkServer_ struct {
+type NsNetworkServer struct {
 	NetId           string `toml:"net_id"`
 	Api             `toml:"api"`
 	Band            `toml:"band"`
 	Gateway         `toml:"gateway"`
-	NetworkSettings NetworkSettings `toml:"network_settings"`
+	NetworkSettings `toml:"network_settings"`
 }
 
 type Default struct {
@@ -65,10 +75,25 @@ type JoinServer struct {
 }
 
 type NetworkServer struct {
-	Postgresql     `toml:"postgresql"`
-	Redis          `toml:"redis"`
-	NetworkServer_ `toml:"network_server"`
-	JoinServer     `toml:"join_server"`
+	Postgresql      `toml:"postgresql"`
+	Redis           `toml:"redis"`
+	NsNetworkServer `toml:"network_server"`
+	JoinServer      `toml:"join_server"`
+}
+
+// NSSettings
+type NSSettings struct {
+	NetID                 string
+	BandName              string
+	DisableADR            bool
+	ADRMargin             int32
+	Rx1Delay              int32
+	Rx1DROffset           int32
+	Rx2Frequency          int32
+	Rx2DR                 int32
+	DownlinkTXPower       int32
+	ExtraChannels         *[]ExtraChannels
+	EnabledUplinkChannels *[]int32
 }
 
 func (c *NetworkServer) Marshal() ([]byte, error) {
@@ -82,7 +107,7 @@ func (c *NetworkServer) IsNil() bool {
 	return c == nil
 }
 
-func NewNetworkServer() *NetworkServer {
+func NewNetworkServer(s *NSSettings) *NetworkServer {
 	return &NetworkServer{
 		Postgresql: Postgresql{
 			Dsn: "postgres://chirpstack_ns:dfrobot@localhost/chirpstack_ns?sslmode=disable",
@@ -90,12 +115,14 @@ func NewNetworkServer() *NetworkServer {
 		Redis: Redis{
 			Url: "redis://localhost:6379",
 		},
-		NetworkServer_: NetworkServer_{
-			NetId: "000000",
+		NsNetworkServer: NsNetworkServer{
+			NetId: s.NetID,
 			Api: Api{
 				Bind: "0.0.0.0:8000",
 			},
-			Band: Band{},
+			Band: Band{
+				Name: s.BandName,
+			},
 			Gateway: Gateway{
 				NsBackend: NsBackend{
 					Type: "mqtt",
@@ -106,7 +133,19 @@ func NewNetworkServer() *NetworkServer {
 					},
 				},
 			},
-			NetworkSettings: NetworkSettings{},
+			NetworkSettings: NetworkSettings{
+				InstallationMargin: s.ADRMargin,
+				// RxWindow          :,
+				Rx1Delay:        s.Rx1Delay,
+				Rx1DROffset:     s.Rx1DROffset,
+				Rx2DR:           s.Rx2DR,
+				Rx2Frequency:    s.Rx2Frequency,
+				DownlinkTxPower: s.DownlinkTXPower,
+				DisableADR:      s.DisableADR,
+
+				ExtraChannels:         s.ExtraChannels,
+				EnabledUplinkChannels: s.EnabledUplinkChannels,
+			},
 		},
 		JoinServer: JoinServer{
 			Default: Default{

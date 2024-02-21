@@ -1,6 +1,6 @@
 package integration
 
-import "github.com/NephogramX/hwconfig/configfile/pf"
+import "github.com/NephogramX/hwconfig/configfile"
 
 type IntegrationType int32
 
@@ -11,9 +11,8 @@ const (
 )
 
 type Integration interface {
-	Get() IntegrationType
-
-	HandleUdpPacketForwarder(cf *pf.UdpPacketForwarder) error
-
-	HandleBasicStation() error
+	GetType() IntegrationType
+	HandleUdpPacketForwarder(configfile.PFSettings) *configfile.UdpPacketForwarder
+	HandleGatewayBridge(configfile.GBSettings) *configfile.GatewayBridge
+	HandleNetworkServer(configfile.NSSettings) *configfile.NetworkServer
 }

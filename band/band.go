@@ -1,9 +1,7 @@
 package band
 
 import (
-	"github.com/NephogramX/hwconfig/configfile/gb"
-	"github.com/NephogramX/hwconfig/configfile/ns"
-	"github.com/NephogramX/hwconfig/configfile/pf"
+	"github.com/NephogramX/hwconfig/configfile"
 )
 
 type Region int32
@@ -22,11 +20,8 @@ type BandSettings struct {
 }
 
 type Band interface {
-	HandleUdpPacketForwarder(cf *pf.UdpPacketForwarder) error
-	HandleGatewayBridge(cf *gb.GatewayBridge) error
-	HandleNetworkServer(cf *ns.NetworkServer) error
+	String() string
+	GetChannelSettings() *configfile.Channel
+	GetExtraChannels() *[]configfile.ExtraChannels
+	GetUplinkChannels() *[]int32
 }
-
-// func NewBand(r Region) Band {
-
-// }
