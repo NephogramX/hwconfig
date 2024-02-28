@@ -1,8 +1,6 @@
 package band
 
-import (
-	"github.com/NephogramX/hwconfig/configfile"
-)
+import cf "github.com/NephogramX/hwconfig/configfile"
 
 type EU868Band struct {
 	centerFrequency int32
@@ -23,13 +21,13 @@ func (b *EU868Band) String() string {
 	return "EU868"
 }
 
-func (b EU868Band) GetChannelSettings() *configfile.Channel {
-	return &configfile.Channel{
+func (b EU868Band) GetChannelSettings() *cf.Channel {
+	return &cf.Channel{
 		RaidoCneterFrequency: [2]int32{b.centerFrequency, 868500000},
 		MinTxFrequency:       863000000,
 		MaxTxFrequency:       870000000,
 		RssiOffset:           -215.4,
-		ChanMultiSF: [8]configfile.ChanMultiSF{
+		ChanMultiSF: [8]cf.ChanMultiSF{
 			{Enable: true, Radio: 1, IF: -400000},
 			{Enable: true, Radio: 1, IF: -200000},
 			{Enable: true, Radio: 1, IF: 0},
@@ -39,14 +37,15 @@ func (b EU868Band) GetChannelSettings() *configfile.Channel {
 			{Enable: true, Radio: 0, IF: b.frequencyShift[3]},
 			{Enable: true, Radio: 0, IF: b.frequencyShift[4]},
 		},
-		ChanLoRaStd: configfile.ChanLoRaStd{
-			ChanMultiSF: configfile.ChanMultiSF{Enable: false, Radio: 1},
-			// Bandwidth:   250000, SpreadFactor: 7,
+		ChanLoRaStd: cf.ChanLoRaStd{
+			ChanMultiSF:  cf.ChanMultiSF{Enable: true, Radio: 1},
+			Bandwidth:    250000,
+			SpreadFactor: 7,
 		},
-		ChanLoRaFsk: configfile.ChanLoRaFSK{
-			ChanMultiSF: configfile.ChanMultiSF{Enable: false, Radio: 1},
+		ChanLoRaFsk: cf.ChanLoRaFSK{
+			ChanMultiSF: cf.ChanMultiSF{Enable: false, Radio: 1},
 		},
-		TxGainLutItem: []configfile.TxGainLutItem{
+		TxGainLutItem: []cf.TxGainLutItem{
 			{RFPower: 12, PaGain: 1, PwrIdx: 4},
 			{RFPower: 13, PaGain: 1, PwrIdx: 5},
 			{RFPower: 14, PaGain: 1, PwrIdx: 6},
@@ -67,8 +66,8 @@ func (b EU868Band) GetChannelSettings() *configfile.Channel {
 	}
 }
 
-func (b EU868Band) GetExtraChannels() *[]configfile.ExtraChannels {
-	ec := make([]configfile.ExtraChannels, 5)
+func (b EU868Band) GetExtraChannels() *[]cf.ExtraChannels {
+	ec := make([]cf.ExtraChannels, 5)
 
 	for i := range b.frequencyShift {
 		ec[i].Frequency = b.centerFrequency + b.frequencyShift[i]

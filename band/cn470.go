@@ -3,7 +3,7 @@ package band
 import (
 	"fmt"
 
-	"github.com/NephogramX/hwconfig/configfile"
+	cf "github.com/NephogramX/hwconfig/configfile"
 	"github.com/pkg/errors"
 )
 
@@ -12,7 +12,7 @@ type CN470Band struct {
 }
 
 func NewBandCN470(subbandIndex int32) (*CN470Band, error) {
-	if subbandIndex < 0 || subbandIndex > 9 {
+	if subbandIndex < 0 || subbandIndex > 12 {
 		return nil, errors.New(fmt.Sprint("unsupported subband index:", subbandIndex))
 	}
 	return &CN470Band{
@@ -24,16 +24,16 @@ func (b *CN470Band) String() string {
 	return "CN470"
 }
 
-func (b CN470Band) GetChannelSettings() *configfile.Channel {
-	return &configfile.Channel{
+func (b CN470Band) GetChannelSettings() *cf.Channel {
+	return &cf.Channel{
 		RaidoCneterFrequency: [2]int32{
 			470300000 + 1600000*(b.subbandIndex-1) + 1100000,
 			470300000 + 1600000*(b.subbandIndex-1) + 300000,
 		},
-		MinTxFrequency: 500000000,
+		MinTxFrequency: 470000000,
 		MaxTxFrequency: 510000000,
 		RssiOffset:     -207.0,
-		ChanMultiSF: [8]configfile.ChanMultiSF{
+		ChanMultiSF: [8]cf.ChanMultiSF{
 			{Enable: true, Radio: 0, IF: -300000},
 			{Enable: true, Radio: 0, IF: -100000},
 			{Enable: true, Radio: 0, IF: 100000},
@@ -43,14 +43,14 @@ func (b CN470Band) GetChannelSettings() *configfile.Channel {
 			{Enable: true, Radio: 1, IF: 100000},
 			{Enable: true, Radio: 1, IF: 300000},
 		},
-		ChanLoRaStd: configfile.ChanLoRaStd{
-			ChanMultiSF: configfile.ChanMultiSF{Enable: false, Radio: 0},
-			// Bandwidth:   250000, SpreadFactor: 7,
+		ChanLoRaStd: cf.ChanLoRaStd{
+			ChanMultiSF: cf.ChanMultiSF{Enable: true, Radio: 1, IF: -200000},
+			Bandwidth:   250000, SpreadFactor: 7,
 		},
-		ChanLoRaFsk: configfile.ChanLoRaFSK{
-			ChanMultiSF: configfile.ChanMultiSF{Enable: false, Radio: 1},
+		ChanLoRaFsk: cf.ChanLoRaFSK{
+			ChanMultiSF: cf.ChanMultiSF{Enable: false, Radio: 1},
 		},
-		TxGainLutItem: []configfile.TxGainLutItem{
+		TxGainLutItem: []cf.TxGainLutItem{
 			{RFPower: -6, PaGain: 0, PwrIdx: 0},
 			{RFPower: -3, PaGain: 0, PwrIdx: 1},
 			{RFPower: 0, PaGain: 0, PwrIdx: 2},
@@ -71,7 +71,7 @@ func (b CN470Band) GetChannelSettings() *configfile.Channel {
 	}
 }
 
-func (b CN470Band) GetExtraChannels() *[]configfile.ExtraChannels {
+func (b CN470Band) GetExtraChannels() *[]cf.ExtraChannels {
 	return nil
 }
 

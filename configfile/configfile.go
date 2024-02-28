@@ -1,15 +1,39 @@
 package configfile
 
-const (
-	UdpPacketForwarderCFPath = "/gw/opt/lora_pkt_fwd/global_config"
-	GatewayBridgeCFPath      = "/gw/etc/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml"
-	NetworkServerCFPath      = "/gw/etc/chirpstack-network-server/chirpstack-network-server.toml"
+import (
+	"fmt"
+	"os"
 )
 
-type Marshaller interface {
-	// Backend configuration marshal
-	Marshal() ([]byte, error)
+type File struct {
+	Name string
+	Path string
+}
 
-	// Check if the struct value is nil
+func (f File) String() string {
+	return f.Path + f.Name
+}
+
+type ConfigFile interface {
+	Marshal() ([]byte, error)
+	GetFile() string
 	IsNil() bool
+}
+
+func CreateConfigFile(c ConfigFile) error {
+	if c.IsNil() {
+		return nil
+	}
+	b, err := c.Marshal()
+	if err != nil {
+		return err
+	}
+	fmt.Println("Create : ", c.GetFile())
+	fmt.Println("Write  : ", string(b))
+	file, err := os.Create(c.GetFile())
+	if err != nil {
+		return err
+	}
+	_, err = file.Write(b)
+	return err
 }

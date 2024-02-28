@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	SemtechUDP    = "semtech_udp"
-	BasicsStation = "basic_station"
+	SemtechUDP = "semtech_udp"
+	BStation   = "basic_station"
 )
 
 type SemtechUdp struct {
@@ -35,7 +35,7 @@ type Concentrators struct {
 	Fsk     *Fsk     `toml:"fsk"`
 }
 
-type BasicStation struct {
+type GbBasicStation struct {
 	Bind          string `toml:"bind"`
 	Region        string `toml:"region"`
 	FrequencyMin  int32  `toml:"frequency_min"`
@@ -44,9 +44,9 @@ type BasicStation struct {
 }
 
 type Backend struct {
-	Type         string        `toml:"type"`
-	SemtechUdp   *SemtechUdp   `toml:"semtech_udp, omitempty"`
-	BasicStation *BasicStation `toml:"basic_station, omitempty"`
+	Type         string          `toml:"type"`
+	SemtechUdp   *SemtechUdp     `toml:"semtech_udp, omitempty"`
+	BasicStation *GbBasicStation `toml:"basic_station, omitempty"`
 }
 
 type Generic struct {
@@ -70,27 +70,19 @@ type Intergration struct {
 }
 
 type GatewayBridge struct {
+	File         `toml:"-"`
 	Backend      `toml:"backend"`
 	Intergration `toml:"intergration"`
 }
 
 type GBSettings struct {
 	Backend
-}
-
-func (c *GatewayBridge) Marshal() ([]byte, error) {
-	var buf bytes.Buffer
-	encoder := toml.NewEncoder(&buf)
-	err := encoder.Encode(c)
-	return buf.Bytes(), err
-}
-
-func (c *GatewayBridge) IsNil() bool {
-	return c == nil
+	File
 }
 
 func NewGatewayBridge(s *GBSettings) *GatewayBridge {
 	return &GatewayBridge{
+		File:    s.File,
 		Backend: s.Backend,
 		Intergration: Intergration{
 			Marshaler: "protobuf",
@@ -106,4 +98,19 @@ func NewGatewayBridge(s *GBSettings) *GatewayBridge {
 			},
 		},
 	}
+}
+
+func (c *GatewayBridge) Marshal() ([]byte, error) {
+	var buf bytes.Buffer
+	encoder := toml.NewEncoder(&buf)
+	err := encoder.Encode(c)
+	return buf.Bytes(), err
+}
+
+func (c *GatewayBridge) GetFile() string {
+	return c.File.String()
+}
+
+func (c *GatewayBridge) IsNil() bool {
+	return c == nil
 }

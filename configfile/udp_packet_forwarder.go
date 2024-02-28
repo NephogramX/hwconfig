@@ -142,6 +142,7 @@ type DebugConf struct {
 type UdpPacketForwarder struct {
 	SX130xConfig  `json:"SX130x_conf"`
 	GateWayConfig `json:"gateway_conf"`
+	File          `json:"-"`
 	// DebugConf     `json:"debug_conf"`
 }
 
@@ -188,10 +189,12 @@ type PFSettings struct {
 	Channel
 	Server
 	Comm
+	File
 }
 
 func NewUdpPacketForwarderCF(s *PFSettings) *UdpPacketForwarder {
 	return &UdpPacketForwarder{
+		File: s.File,
 		SX130xConfig: SX130xConfig{
 			ComType:       "SPI",
 			ComPath:       "/dev/spidev2.0",
@@ -301,6 +304,10 @@ func NewUdpPacketForwarderCF(s *PFSettings) *UdpPacketForwarder {
 func (c *UdpPacketForwarder) Marshal() ([]byte, error) {
 	jsonData, err := json.MarshalIndent(c, "", "  ")
 	return jsonData, err
+}
+
+func (c *UdpPacketForwarder) GetFile() string {
+	return c.File.String()
 }
 
 func (c *UdpPacketForwarder) IsNil() bool {

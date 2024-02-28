@@ -3,8 +3,9 @@ package band
 import (
 	"fmt"
 
-	"github.com/NephogramX/hwconfig/configfile"
 	"github.com/pkg/errors"
+
+	cf "github.com/NephogramX/hwconfig/configfile"
 )
 
 type US915Band struct {
@@ -24,16 +25,16 @@ func (b *US915Band) String() string {
 	return "US915"
 }
 
-func (b US915Band) GetChannelSettings() *configfile.Channel {
-	return &configfile.Channel{
+func (b US915Band) GetChannelSettings() *cf.Channel {
+	return &cf.Channel{
 		RaidoCneterFrequency: [2]int32{
 			902300000 + 1600000*(b.subbandIndex-1) + 1000000,
 			902300000 + 1600000*(b.subbandIndex-1) + 300000,
 		},
-		MinTxFrequency: 923000000,
+		MinTxFrequency: 902000000,
 		MaxTxFrequency: 928000000,
 		RssiOffset:     -215.4,
-		ChanMultiSF: [8]configfile.ChanMultiSF{
+		ChanMultiSF: [8]cf.ChanMultiSF{
 			{Enable: true, Radio: 0, IF: -400000},
 			{Enable: true, Radio: 0, IF: -200000},
 			{Enable: true, Radio: 0, IF: 0},
@@ -43,15 +44,15 @@ func (b US915Band) GetChannelSettings() *configfile.Channel {
 			{Enable: true, Radio: 1, IF: 100000},
 			{Enable: true, Radio: 1, IF: 300000},
 		},
-		ChanLoRaStd: configfile.ChanLoRaStd{
-			ChanMultiSF:  configfile.ChanMultiSF{Enable: true, Radio: 0, IF: 300000},
+		ChanLoRaStd: cf.ChanLoRaStd{
+			ChanMultiSF:  cf.ChanMultiSF{Enable: true, Radio: 0, IF: 300000},
 			Bandwidth:    500000,
 			SpreadFactor: 8,
 		},
-		ChanLoRaFsk: configfile.ChanLoRaFSK{
-			ChanMultiSF: configfile.ChanMultiSF{Enable: false, Radio: 1},
+		ChanLoRaFsk: cf.ChanLoRaFSK{
+			ChanMultiSF: cf.ChanMultiSF{Enable: false, Radio: 1},
 		},
-		TxGainLutItem: []configfile.TxGainLutItem{
+		TxGainLutItem: []cf.TxGainLutItem{
 			{RFPower: 12, PaGain: 0, PwrIdx: 15},
 			{RFPower: 13, PaGain: 0, PwrIdx: 16},
 			{RFPower: 14, PaGain: 0, PwrIdx: 17},
@@ -72,7 +73,7 @@ func (b US915Band) GetChannelSettings() *configfile.Channel {
 	}
 }
 
-func (b US915Band) GetExtraChannels() *[]configfile.ExtraChannels {
+func (b US915Band) GetExtraChannels() *[]cf.ExtraChannels {
 	return nil
 }
 

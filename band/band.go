@@ -1,8 +1,6 @@
 package band
 
-import (
-	"github.com/NephogramX/hwconfig/configfile"
-)
+import cf "github.com/NephogramX/hwconfig/configfile"
 
 type Region int32
 
@@ -21,7 +19,7 @@ type BandSettings struct {
 
 type Band interface {
 	String() string
-	GetChannelSettings() *configfile.Channel
-	GetExtraChannels() *[]configfile.ExtraChannels
+	GetChannelSettings() *cf.Channel
+	GetExtraChannels() *[]cf.ExtraChannels
 	GetUplinkChannels() *[]int32
 }

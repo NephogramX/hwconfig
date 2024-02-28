@@ -79,6 +79,7 @@ type NetworkServer struct {
 	Redis           `toml:"redis"`
 	NsNetworkServer `toml:"network_server"`
 	JoinServer      `toml:"join_server"`
+	File            `toml:"-"`
 }
 
 // NSSettings
@@ -94,21 +95,12 @@ type NSSettings struct {
 	DownlinkTXPower       int32
 	ExtraChannels         *[]ExtraChannels
 	EnabledUplinkChannels *[]int32
-}
-
-func (c *NetworkServer) Marshal() ([]byte, error) {
-	var buf bytes.Buffer
-	encoder := toml.NewEncoder(&buf)
-	err := encoder.Encode(c)
-	return buf.Bytes(), err
-}
-
-func (c *NetworkServer) IsNil() bool {
-	return c == nil
+	File
 }
 
 func NewNetworkServer(s *NSSettings) *NetworkServer {
 	return &NetworkServer{
+		File: s.File,
 		Postgresql: Postgresql{
 			Dsn: "postgres://chirpstack_ns:dfrobot@localhost/chirpstack_ns?sslmode=disable",
 		},
@@ -153,4 +145,19 @@ func NewNetworkServer(s *NSSettings) *NetworkServer {
 			},
 		},
 	}
+}
+
+func (c *NetworkServer) Marshal() ([]byte, error) {
+	var buf bytes.Buffer
+	encoder := toml.NewEncoder(&buf)
+	err := encoder.Encode(c)
+	return buf.Bytes(), err
+}
+
+func (c *NetworkServer) GetFile() string {
+	return c.File.String()
+}
+
+func (c *NetworkServer) IsNil() bool {
+	return c == nil
 }

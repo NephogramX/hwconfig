@@ -2,7 +2,7 @@ package integration
 
 import (
 	"github.com/NephogramX/hwconfig/band"
-	"github.com/NephogramX/hwconfig/configfile"
+	cf "github.com/NephogramX/hwconfig/configfile"
 )
 
 type ADRSettings struct {
@@ -22,8 +22,6 @@ type LoRaSettings struct {
 	DownlinkTXPower int32
 }
 
-type CommSettings = configfile.Comm
-
 type BuildinNSSettings struct {
 	Band band.Band
 	LoRaSettings
@@ -34,52 +32,76 @@ type BuildinIntegration struct {
 	BuildinNSSettings
 }
 
-func NewBuildinIntegration(s *BuildinNSSettings) *BuildinIntegration {
+func NewBuildinIntegration(s *BuildinNSSettings) (*BuildinIntegration, error) {
 	return &BuildinIntegration{
 		BuildinNSSettings: *s,
-	}
+	}, nil
 }
 
-func (b *BuildinIntegration) GetType() IntegrationType {
-	return Buildin
+func (i *BuildinIntegration) HandleBasicsStationUri() *cf.BasicsStation {
+	return nil
 }
 
-func (b *BuildinIntegration) HandleUdpPacketForwarder() *configfile.UdpPacketForwarder {
-	return configfile.NewUdpPacketForwarderCF(&configfile.PFSettings{
-		Channel: *b.Band.GetChannelSettings(),
-		Server: configfile.Server{
+func (i *BuildinIntegration) HandleBasicsStationKey() *cf.BasicsStation {
+	return nil
+}
+
+func (i *BuildinIntegration) HandleBasicsStationCrt() *cf.BasicsStation {
+	return nil
+}
+
+func (i *BuildinIntegration) HandleBasicsStationTrust() *cf.BasicsStation {
+	return nil
+}
+
+func (i *BuildinIntegration) HandleUdpPacketForwarder() *cf.UdpPacketForwarder {
+	return cf.NewUdpPacketForwarderCF(&cf.PFSettings{
+		Channel: *i.Band.GetChannelSettings(),
+		Server: cf.Server{
 			Address:  "localhost",
 			PortUp:   1700,
 			PortDown: 1700,
 		},
-		Comm: b.CommSettings,
-	})
-}
-
-func (b *BuildinIntegration) HandleGatewayBridge() *configfile.GatewayBridge {
-	return configfile.NewGatewayBridge(&configfile.GBSettings{
-		Backend: configfile.Backend{
-			Type: configfile.SemtechUDP,
-			SemtechUdp: &configfile.SemtechUdp{
-				UdpBind: "0.0.0.0:1700",
-			},
-			BasicStation: nil,
+		Comm: i.CommSettings,
+		File: cf.File{
+			Name: PFName,
+			Path: PFPath,
 		},
 	})
 }
 
-func (b *BuildinIntegration) HandleNetworkServer() *configfile.NetworkServer {
-	return configfile.NewNetworkServer(&configfile.NSSettings{
-		NetID:                 b.NetID,
-		BandName:              b.Band.String(),
-		DisableADR:            b.Enable,
-		ADRMargin:             b.AdrMargin,
-		Rx1Delay:              b.Rx1Delay,
-		Rx1DROffset:           b.Rx1DROffset,
-		Rx2Frequency:          b.Rx2Frequency,
-		Rx2DR:                 b.Rx2DR,
-		DownlinkTXPower:       b.DownlinkTXPower,
-		ExtraChannels:         b.Band.GetExtraChannels(),
-		EnabledUplinkChannels: b.Band.GetUplinkChannels(),
+func (i *BuildinIntegration) HandleGatewayBridge() *cf.GatewayBridge {
+	return cf.NewGatewayBridge(&cf.GBSettings{
+		Backend: cf.Backend{
+			Type: cf.SemtechUDP,
+			SemtechUdp: &cf.SemtechUdp{
+				UdpBind: "0.0.0.0:1700",
+			},
+			BasicStation: nil,
+		},
+		File: cf.File{
+			Name: GBName,
+			Path: GBPath,
+		},
+	})
+}
+
+func (i *BuildinIntegration) HandleNetworkServer() *cf.NetworkServer {
+	return cf.NewNetworkServer(&cf.NSSettings{
+		NetID:                 i.NetID,
+		BandName:              i.Band.String(),
+		DisableADR:            !i.Enable,
+		ADRMargin:             i.AdrMargin,
+		Rx1Delay:              i.Rx1Delay,
+		Rx1DROffset:           i.Rx1DROffset,
+		Rx2Frequency:          i.Rx2Frequency,
+		Rx2DR:                 i.Rx2DR,
+		DownlinkTXPower:       i.DownlinkTXPower,
+		ExtraChannels:         i.Band.GetExtraChannels(),
+		EnabledUplinkChannels: i.Band.GetUplinkChannels(),
+		File: cf.File{
+			Name: NSName,
+			Path: NSPath,
+		},
 	})
 }
