@@ -2,6 +2,8 @@ package configfile
 
 import (
 	"bytes"
+	"errors"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 )
@@ -147,17 +149,27 @@ func NewNetworkServer(s *NSSettings) *NetworkServer {
 	}
 }
 
-func (c *NetworkServer) Marshal() ([]byte, error) {
+func (c *NetworkServer) Write() error {
+	if c == nil {
+		return nil
+	}
 	var buf bytes.Buffer
 	encoder := toml.NewEncoder(&buf)
-	err := encoder.Encode(c)
-	return buf.Bytes(), err
+	if err := encoder.Encode(c); err != nil {
+		return err
+	}
+
+	return writeFile(c.File.String(), buf.Bytes())
 }
 
-func (c *NetworkServer) GetFile() string {
-	return c.File.String()
-}
-
-func (c *NetworkServer) IsNil() bool {
-	return c == nil
+func (c *NetworkServer) ReadFrom(p string) error {
+	if c == nil {
+		return errors.New("nil interface")
+	}
+	c.File = File{
+		Name: filepath.Base(p),
+		Path: filepath.Dir(p),
+	}
+	_, err := toml.DecodeFile(p, c)
+	return err
 }

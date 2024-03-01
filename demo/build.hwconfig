@@ -1,0 +1,1 @@
+{"mode":{"mode":"NS","ModeConfig":{"Ns":{"networkId":"000000","adr":{"enable":true,"drIdMax":4,"margin":10},"rx1":{"delay":-1},"rx2":{"freq":-1},"downlinkTxPower":23}}},"region":{"regionId":"US915","RegionConfig":{"Us915":{"subBandId":2}}},"filter":{}}

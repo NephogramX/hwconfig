@@ -2,6 +2,8 @@ package configfile
 
 import (
 	"bytes"
+	"errors"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 )
@@ -69,14 +71,21 @@ type Intergration struct {
 	Mqtt      `toml:"gb_mqtt"`
 }
 
+type Filter struct {
+	NetIds   []string    `toml:"net_ids"`
+	JoinEuis [][2]string `mapstructure:toml:"join_euis"`
+}
+
 type GatewayBridge struct {
 	File         `toml:"-"`
 	Backend      `toml:"backend"`
+	Filter       `toml:"filter"`
 	Intergration `toml:"intergration"`
 }
 
 type GBSettings struct {
 	Backend
+	Filter
 	File
 }
 
@@ -84,6 +93,7 @@ func NewGatewayBridge(s *GBSettings) *GatewayBridge {
 	return &GatewayBridge{
 		File:    s.File,
 		Backend: s.Backend,
+		Filter:  s.Filter,
 		Intergration: Intergration{
 			Marshaler: "protobuf",
 			Mqtt: Mqtt{
@@ -100,17 +110,26 @@ func NewGatewayBridge(s *GBSettings) *GatewayBridge {
 	}
 }
 
-func (c *GatewayBridge) Marshal() ([]byte, error) {
+func (c *GatewayBridge) Write() error {
+	if c == nil {
+		return nil
+	}
 	var buf bytes.Buffer
 	encoder := toml.NewEncoder(&buf)
-	err := encoder.Encode(c)
-	return buf.Bytes(), err
+	if err := encoder.Encode(c); err != nil {
+		return err
+	}
+	return writeFile(c.File.String(), buf.Bytes())
 }
 
-func (c *GatewayBridge) GetFile() string {
-	return c.File.String()
-}
-
-func (c *GatewayBridge) IsNil() bool {
-	return c == nil
+func (c *GatewayBridge) ReadFrom(p string) error {
+	if c == nil {
+		return errors.New("nil interface")
+	}
+	c.File = File{
+		Name: filepath.Base(p),
+		Path: filepath.Dir(p),
+	}
+	_, err := toml.DecodeFile(p, c)
+	return err
 }
