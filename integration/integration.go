@@ -13,15 +13,15 @@ const (
 	UdpPacketForwarder IntegrationType = iota
 	BasicsStation      IntegrationType = iota
 
-	// BSPath = "/gw/opt/lora_pkt_fwd/"
-	// PFPath = "/gw/opt/lora_pkt_fwd/"
-	// GBPath = "/gw/etc/chirpstack-ttn-gateway/"
-	// NSPath = "/gw/etc/chirpstack-ttn-gateway/"
+	BSPath = "/gw/opt/lora_pkt_fwd/"
+	PFPath = "/gw/opt/lora_pkt_fwd/"
+	GBPath = "/gw/etc/chirpstack-ttn-gateway/"
+	NSPath = "/gw/etc/chirpstack-ttn-gateway/"
 
-	BSPath = "./build/"
-	PFPath = "./build/"
-	GBPath = "./build/"
-	NSPath = "./build/"
+	// BSPath = "./build/"
+	// PFPath = "./build/"
+	// GBPath = "./build/"
+	// NSPath = "./build/"
 
 	PFName = "global_conf.json"
 	GBName = "chirpstack-gateway-bridge.toml"

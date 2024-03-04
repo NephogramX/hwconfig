@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	// HWPath = "/gw/config/hwconfig/"
-	HWPath = "./build/"
+	HWPath = "/gw/config/hwconfig/"
+	// HWPath = "./build/"
 	HWName = ".hwconfig"
 )
 
