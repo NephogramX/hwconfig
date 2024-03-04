@@ -15,25 +15,45 @@ func (f File) String() string {
 }
 
 type ConfigFile interface {
-	Marshal() ([]byte, error)
+	Write() error
+	ReadFrom(p string) error
 	GetFile() string
 	IsNil() bool
 }
 
-func CreateConfigFile(c ConfigFile) error {
-	if c.IsNil() {
-		return nil
-	}
-	b, err := c.Marshal()
+func readFile(path string) ([]byte, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error opening file: %v", err)
 	}
-	fmt.Println("Create : ", c.GetFile())
-	fmt.Println("Write  : ", string(b))
-	file, err := os.Create(c.GetFile())
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error getting file information: %v", err)
 	}
-	_, err = file.Write(b)
-	return err
+	fileSize := fileInfo.Size()
+
+	data := make([]byte, fileSize)
+	_, err = file.Read(data)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %v", err)
+	}
+
+	return data, nil
+}
+
+func writeFile(path string, data []byte) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("error creating file: %v", err)
+	}
+	defer file.Close()
+
+	_, err = file.Write(data)
+	if err != nil {
+		return fmt.Errorf("error writing to file: %v", err)
+	}
+
+	return nil
 }

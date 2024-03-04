@@ -1,8 +1,10 @@
 package main
 
 import (
-	"github.com/NephogramX/hwconfig/band"
-	"github.com/NephogramX/hwconfig/integration"
+	"fmt"
+
+	"gitee.com/arya123/chirpstack-api/go/as/external/api"
+	"github.com/NephogramX/hwconfig"
 )
 
 /*
@@ -15,23 +17,162 @@ import (
  */
 
 func main() {
-	// b, _ := band.NewBandEU868(867500000, [5]int32{-400000, -200000, 0, 200000, 400000})
+	err := hwconfig.Setup()
+	if err != nil {
+		panic(err)
+	}
 
-	// BSLoriot()
-	// PFLoriot(b)
+	c, err := hwconfig.Get()
+	if err != nil {
+		panic(err)
+	}
 
-	// b, _ := band.NewBandCN470(11)
-	// PFTTN(b)
+	fmt.Print(*c)
 
-	// LNSTTN()
-	CUPSTTN()
-
-	// buildin(b)
-
-	// PFTencentCloud()
-
+	bs()
+	ns()
+	ns()
+	pf()
 }
 
+func pf() {
+	_, err := hwconfig.Set(&api.ConfigGateWayModeRegionRequest{
+		Mode: &api.GateWayMode{
+			Mode: "PF",
+			ModeConfig: &api.GateWayMode_Pf{
+				Pf: &api.PacketForwarder{
+					Protocol: &api.PFProtocol{
+						Settings: &api.PFProtocol_Gwmp{
+							Gwmp: &api.GWMPSSettings{
+								Port: &api.GWMPPort{
+									Uplink:   1700,
+									Downlink: 1700,
+								},
+								Server: "localhost",
+							},
+						},
+					},
+				},
+			},
+		},
+		Region: &api.GateWayRegion{
+			RegionId: "US915",
+			RegionConfig: &api.GateWayRegion_Us915{
+				Us915: &api.US915Config{
+					SubBandId: 2,
+				},
+			},
+		},
+		Filter: &api.Filter{
+			WhiteList: &api.WhiteList{
+				Enable:  true,
+				OuiList: []string{"000001", "000002"},
+				JoinList: []*api.JoinEUIs{
+					{From: "aaaabbbbccccdddd", To: "aaaabbbbcccceeee"},
+					{From: "aaaabbbbccccffff", To: "aaaabbbbcccfffff"},
+				},
+			},
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func ns() {
+	adr, err := hwconfig.Set(&api.ConfigGateWayModeRegionRequest{
+		Mode: &api.GateWayMode{
+			Mode: "NS",
+			ModeConfig: &api.GateWayMode_Ns{
+				Ns: &api.BuiltInNetworkServer{
+					NetworkId: "000000",
+					Adr: &api.NSADR{
+						Enable:  true,
+						DrIdMax: 4,
+						DrIdMin: 0,
+						Margin:  10,
+					},
+					Rx1: &api.NSRX1{
+						DrOffset: -1,
+						Delay:    -1,
+					},
+					Rx2: &api.NSRX2{
+						Freq:    -1,
+						DrIndex: -1,
+					},
+					DownlinkTxPower: 23,
+				},
+			},
+		},
+		Region: &api.GateWayRegion{
+			RegionId: "US915",
+			RegionConfig: &api.GateWayRegion_Us915{
+				Us915: &api.US915Config{
+					SubBandId: 2,
+				},
+			},
+		},
+		Filter: &api.Filter{
+			WhiteList: &api.WhiteList{
+				Enable:  true,
+				OuiList: []string{"000001", "000002"},
+				JoinList: []*api.JoinEUIs{
+					{From: "aaaabbbbccccdddd", To: "aaaabbbbcccceeee"},
+					{From: "aaaabbbbccccffff", To: "aaaabbbbcccfffff"},
+				},
+			},
+		},
+	})
+	fmt.Print("----------")
+	fmt.Println(adr)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func bs() {
+	_, err := hwconfig.Set(&api.ConfigGateWayModeRegionRequest{
+		Mode: &api.GateWayMode{
+			Mode: "BS",
+			ModeConfig: &api.GateWayMode_Bs{
+				Bs: &api.BasicsStation{
+					Type:   "LNS",
+					Server: "localhost",
+					Port:   1883,
+					Auth: &api.BSAuth{
+						Mode:    "TLS_Server_Client",
+						CaCert:  string(LNSLoriotCert.Pem),
+						CliCert: string(LNSLoriotCert.Crt),
+						CliKey:  string(LNSLoriotCert.Key),
+					},
+				},
+			},
+		},
+		Region: &api.GateWayRegion{
+			RegionId: "US915",
+			RegionConfig: &api.GateWayRegion_Us915{
+				Us915: &api.US915Config{
+					SubBandId: 2,
+				},
+			},
+		},
+		Filter: &api.Filter{
+			WhiteList: &api.WhiteList{
+				Enable:  true,
+				OuiList: []string{"000001", "000002"},
+				JoinList: []*api.JoinEUIs{
+					{From: "aaaabbbbccccdddd", To: "aaaabbbbcccceeee"},
+					{From: "aaaabbbbccccffff", To: "aaaabbbbcccfffff"},
+				},
+			},
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+/*
 func buildin(b band.Band) error {
 	i, err := integration.NewBuildinIntegration(&integration.BuildinNSSettings{
 		Band: b,
@@ -176,3 +317,4 @@ func LNSLoriot() error {
 
 	return integration.ApplySettings(i)
 }
+*/

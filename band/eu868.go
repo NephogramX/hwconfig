@@ -3,17 +3,17 @@ package band
 import cf "github.com/NephogramX/hwconfig/configfile"
 
 type EU868Band struct {
-	centerFrequency int32
-	frequencyShift  [5]int32
+	CenterFrequency int32
+	FrequencyShift  []int32
 }
 
 type CustomBand struct {
 }
 
-func NewBandEU868(centerFrequency int32, frequencyShift [5]int32) (*EU868Band, error) {
+func NewBandEU868(centerFrequency int32, frequencyShift []int32) (*EU868Band, error) {
 	return &EU868Band{
-		centerFrequency: centerFrequency,
-		frequencyShift:  frequencyShift,
+		CenterFrequency: centerFrequency,
+		FrequencyShift:  frequencyShift,
 	}, nil
 }
 
@@ -21,9 +21,22 @@ func (b *EU868Band) String() string {
 	return "EU868"
 }
 
-func (b EU868Band) GetChannelSettings() *cf.Channel {
+func (b *EU868Band) GetChannelSettings() *cf.Channel {
+	fs := [5]struct {
+		Enable         bool
+		FrequencyShift int32
+	}{}
+	i := 0
+	for _, f := range b.FrequencyShift {
+		if f > 0 {
+			fs[i].Enable = true
+			fs[i].FrequencyShift = f
+			i++
+		}
+	}
+
 	return &cf.Channel{
-		RaidoCneterFrequency: [2]int32{b.centerFrequency, 868500000},
+		RaidoCneterFrequency: [2]int32{b.CenterFrequency, 868500000},
 		MinTxFrequency:       863000000,
 		MaxTxFrequency:       870000000,
 		RssiOffset:           -215.4,
@@ -31,11 +44,11 @@ func (b EU868Band) GetChannelSettings() *cf.Channel {
 			{Enable: true, Radio: 1, IF: -400000},
 			{Enable: true, Radio: 1, IF: -200000},
 			{Enable: true, Radio: 1, IF: 0},
-			{Enable: true, Radio: 0, IF: b.frequencyShift[0]},
-			{Enable: true, Radio: 0, IF: b.frequencyShift[1]},
-			{Enable: true, Radio: 0, IF: b.frequencyShift[2]},
-			{Enable: true, Radio: 0, IF: b.frequencyShift[3]},
-			{Enable: true, Radio: 0, IF: b.frequencyShift[4]},
+			{Enable: fs[0].Enable, Radio: 0, IF: fs[0].FrequencyShift},
+			{Enable: fs[1].Enable, Radio: 0, IF: fs[1].FrequencyShift},
+			{Enable: fs[2].Enable, Radio: 0, IF: fs[2].FrequencyShift},
+			{Enable: fs[3].Enable, Radio: 0, IF: fs[3].FrequencyShift},
+			{Enable: fs[4].Enable, Radio: 0, IF: fs[4].FrequencyShift},
 		},
 		ChanLoRaStd: cf.ChanLoRaStd{
 			ChanMultiSF:  cf.ChanMultiSF{Enable: true, Radio: 1},
@@ -66,11 +79,11 @@ func (b EU868Band) GetChannelSettings() *cf.Channel {
 	}
 }
 
-func (b EU868Band) GetExtraChannels() *[]cf.ExtraChannels {
+func (b *EU868Band) GetExtraChannels() *[]cf.ExtraChannels {
 	ec := make([]cf.ExtraChannels, 5)
 
-	for i := range b.frequencyShift {
-		ec[i].Frequency = b.centerFrequency + b.frequencyShift[i]
+	for i := range b.FrequencyShift {
+		ec[i].Frequency = b.CenterFrequency + b.FrequencyShift[i]
 		ec[i].MinDr = 0
 		ec[i].MaxDr = 5
 	}
@@ -78,6 +91,6 @@ func (b EU868Band) GetExtraChannels() *[]cf.ExtraChannels {
 	return &ec
 }
 
-func (b EU868Band) GetUplinkChannels() *[]int32 {
+func (b *EU868Band) GetUplinkChannels() *[]int32 {
 	return nil
 }

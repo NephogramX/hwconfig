@@ -39,11 +39,11 @@ mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
 emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----`
 
-type Portocol int32
+type Portocol = string
 
 const (
-	LNS  Portocol = iota
-	CUPS Portocol = iota
+	LNS  Portocol = "LNS"
+	CUPS Portocol = "CUPS"
 )
 
 /*
@@ -113,6 +113,10 @@ func NewBasicsStationIntegration(s *BasicsStationSetting) (*BasicsStationIntegra
 	i.Authentication = s.Authentication
 
 	return i, nil
+}
+
+func (i *BasicsStationIntegration) Type() IntegrationType {
+	return BasicsStation
 }
 
 func (i *BasicsStationIntegration) HandleBasicsStationUri() *cf.BasicsStation {

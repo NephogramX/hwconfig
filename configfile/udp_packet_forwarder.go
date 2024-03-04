@@ -2,6 +2,9 @@ package configfile
 
 import (
 	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
 )
 
 // global_config.json
@@ -301,15 +304,33 @@ func NewUdpPacketForwarderCF(s *PFSettings) *UdpPacketForwarder {
 	}
 }
 
-func (c *UdpPacketForwarder) Marshal() ([]byte, error) {
+func (c *UdpPacketForwarder) Write() error {
+	if c == nil {
+		return nil
+	}
 	jsonData, err := json.MarshalIndent(c, "", "  ")
-	return jsonData, err
+	if err != nil {
+		return err
+	}
+
+	return writeFile(c.File.String(), jsonData)
 }
 
-func (c *UdpPacketForwarder) GetFile() string {
-	return c.File.String()
-}
+func (c *UdpPacketForwarder) ReadFrom(p string) error {
+	if c == nil {
+		return errors.New("nil interface")
+	}
+	c.File = File{
+		Name: filepath.Base(p),
+		Path: filepath.Dir(p),
+	}
+	file, err := os.Open(p)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 
-func (c *UdpPacketForwarder) IsNil() bool {
-	return c == nil
+	decoder := json.NewDecoder(file)
+	return decoder.Decode(c)
+
 }

@@ -21,6 +21,10 @@ func NewPacketForwarderIntegration(s *PacketForwarderSettings) (*PacketForwarder
 	}, nil
 }
 
+func (i *PacketForwarderIntegration) Type() IntegrationType {
+	return Buildin
+}
+
 func (i *PacketForwarderIntegration) HandleBasicsStationUri() *cf.BasicsStation {
 	return nil
 }
@@ -45,7 +49,6 @@ func (i *PacketForwarderIntegration) HandleUdpPacketForwarder() *cf.UdpPacketFor
 			Path: PFPath,
 		},
 	})
-
 }
 
 func (i *PacketForwarderIntegration) HandleGatewayBridge() *cf.GatewayBridge {

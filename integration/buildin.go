@@ -12,8 +12,11 @@ type ADRSettings struct {
 	AdrMargin int32
 }
 
+type FilterSettings = cf.Filter
+
 type LoRaSettings struct {
 	ADRSettings
+	FilterSettings
 	NetID           string
 	Rx1Delay        int32
 	Rx1DROffset     int32
@@ -38,6 +41,10 @@ func NewBuildinIntegration(s *BuildinNSSettings) (*BuildinIntegration, error) {
 	}, nil
 }
 
+func (i *BuildinIntegration) Type() IntegrationType {
+	return Buildin
+}
+
 func (i *BuildinIntegration) HandleBasicsStationUri() *cf.BasicsStation {
 	return nil
 }
@@ -56,7 +63,7 @@ func (i *BuildinIntegration) HandleBasicsStationTrust() *cf.BasicsStation {
 
 func (i *BuildinIntegration) HandleUdpPacketForwarder() *cf.UdpPacketForwarder {
 	return cf.NewUdpPacketForwarderCF(&cf.PFSettings{
-		Channel: *i.Band.GetChannelSettings(),
+		Channel: *(i.Band.GetChannelSettings()),
 		Server: cf.Server{
 			Address:  "localhost",
 			PortUp:   1700,
@@ -79,6 +86,7 @@ func (i *BuildinIntegration) HandleGatewayBridge() *cf.GatewayBridge {
 			},
 			BasicStation: nil,
 		},
+		Filter: i.FilterSettings,
 		File: cf.File{
 			Name: GBName,
 			Path: GBPath,
