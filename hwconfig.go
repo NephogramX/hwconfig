@@ -173,8 +173,27 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 	return adr, Save(c)
 }
 
-func Get() (*api.GetGateWayModeRegionResponse, error) {
-	return &hwconfig, nil
+func Get(isAdmin bool) (*api.GetGateWayModeRegionResponse, error) {
+
+	// proto: in order to achieve deep copy function
+	b, err := proto.Marshal(&hwconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	c := api.GetGateWayModeRegionResponse{}
+	err = proto.Unmarshal(b, &c)
+	if err != nil {
+		return nil, err
+	}
+
+	if (!isAdmin) && (c.GetMode().GetMode() == "BS") {
+		c.GetMode().GetBs().GetAuth().CaCert = "······"
+		c.GetMode().GetBs().GetAuth().CliCert = "······"
+		c.GetMode().GetBs().GetAuth().CliKey = "······"
+	}
+
+	return &c, nil
 }
 
 func Save(c *api.ConfigGateWayModeRegionRequest) error {

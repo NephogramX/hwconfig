@@ -15,8 +15,8 @@ const (
 
 	BSPath = "/gw/opt/lora_pkt_fwd/"
 	PFPath = "/gw/opt/lora_pkt_fwd/"
-	GBPath = "/gw/etc/chirpstack-ttn-gateway/"
-	NSPath = "/gw/etc/chirpstack-ttn-gateway/"
+	GBPath = "/gw/etc/chirpstack-gateway-bridge/"
+	NSPath = "/gw/etc/chirpstack-network-server/"
 
 	// BSPath = "./build/"
 	// PFPath = "./build/"
