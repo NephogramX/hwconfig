@@ -9,9 +9,6 @@ type EU868Band struct {
 	FrequencyShift  []int32
 }
 
-type CustomBand struct {
-}
-
 func NewBandEU868(centerFrequency int32, frequencyShift []int32) (*EU868Band, error) {
 	return &EU868Band{
 		CenterFrequency: centerFrequency,
@@ -28,11 +25,13 @@ func (b *EU868Band) GetChannelSettings() *cf.Channel {
 		Enable         bool
 		FrequencyShift int32
 	}{}
-	i := 0
-	for _, f := range b.FrequencyShift {
+
+	for i, f := range b.FrequencyShift {
+		if i >= 5 {
+			break
+		}
 		fs[i].Enable = true
 		fs[i].FrequencyShift = f
-		i++
 	}
 
 	return &cf.Channel{

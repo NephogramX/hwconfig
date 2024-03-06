@@ -175,23 +175,29 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 		}
 
 		a := integration.Authentication{}
-		p, c, k := []byte(m.GetAuth().GetCaCert()), []byte(m.GetAuth().GetCliCert()), []byte(m.GetAuth().GetCliKey())
-
-		a.ServerCert = nil
-		a.ClientCert = nil
-		a.Key = nil
+		p, c, k, t := []byte(m.GetAuth().GetCaCert()), []byte(m.GetAuth().GetCliCert()), []byte(m.GetAuth().GetCliKey()), []byte(m.GetAuth().GetToken())
 
 		switch m.GetAuth().GetMode() {
 		case "NO_AUTH":
+			m.GetAuth().CaCert = ""
+			m.GetAuth().CliCert = ""
+			m.GetAuth().CliKey = ""
+			m.GetAuth().Token = ""
 		case "TLS_Server":
 			a.ServerCert = &p
+			m.GetAuth().CliCert = ""
+			m.GetAuth().CliKey = ""
+			m.GetAuth().Token = ""
 		case "TLS_Server_Client":
 			a.ServerCert = &p
 			a.ClientCert = &c
 			a.Key = &k
+			m.GetAuth().Token = ""
 		case "TLS_Server_Client_Token":
 			a.ServerCert = &p
-			a.Key = &k
+			a.Key = &t
+			m.GetAuth().CliCert = ""
+			m.GetAuth().CliKey = ""
 		}
 
 		i, err = integration.NewBasicsStationIntegration(&integration.BasicsStationSetting{

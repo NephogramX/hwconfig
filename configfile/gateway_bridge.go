@@ -73,7 +73,7 @@ type Intergration struct {
 
 type Filter struct {
 	NetIds   []string    `toml:"net_ids"`
-	JoinEuis [][2]string `mapstructure:toml:"join_euis"`
+	JoinEuis [][2]string `toml:"join_euis"`
 }
 
 type GatewayBridge struct {
