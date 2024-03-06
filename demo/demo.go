@@ -34,6 +34,9 @@ func main() {
 		panic(err)
 	}
 	b, err := json.MarshalIndent(&c, " ", "	  ")
+	if err != nil {
+		panic(err)
+	}
 	fmt.Printf("%+v\n", string(b))
 
 	// bs()

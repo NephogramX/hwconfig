@@ -227,6 +227,10 @@ func Get(isAdmin bool) (*api.GetGateWayModeRegionResponse, error) {
 		return nil, err
 	}
 
+	if c.GetMode().GetMode() == "PF" {
+		c.Mode.GetPf().GetProtocol().Type = "GWMP"
+	}
+
 	if (!isAdmin) && (c.GetMode().GetMode() == "BS") {
 		c.GetMode().GetBs().GetAuth().CaCert = "······"
 		c.GetMode().GetBs().GetAuth().CliCert = "······"
