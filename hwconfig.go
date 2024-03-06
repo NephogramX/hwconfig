@@ -177,6 +177,10 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 		a := integration.Authentication{}
 		p, c, k := []byte(m.GetAuth().GetCaCert()), []byte(m.GetAuth().GetCliCert()), []byte(m.GetAuth().GetCliKey())
 
+		a.ServerCert = nil
+		a.ClientCert = nil
+		a.Key = nil
+
 		switch m.GetAuth().GetMode() {
 		case "NO_AUTH":
 		case "TLS_Server":
