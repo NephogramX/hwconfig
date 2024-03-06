@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	cf "github.com/NephogramX/hwconfig/configfile"
+
 	"gitee.com/arya123/chirpstack-api/go/as/external/api"
 	"github.com/NephogramX/hwconfig/band"
 	"github.com/NephogramX/hwconfig/integration"
@@ -12,14 +14,26 @@ import (
 )
 
 const (
-	HWPath = "/gw/config/hwconfig/"
-	// HWPath = "./build/"
 	HWName = ".hwconfig"
+)
+
+var (
+	HWPath string = "/gw/config/hwconfig/"
 )
 
 var hwconfig api.GetGateWayModeRegionResponse
 
 func Setup() error {
+	return Load(&hwconfig)
+}
+
+func SetupDebug() error {
+	HWPath = "./build/"
+	integration.BSPath = "./build/"
+	integration.PFPath = "./build/"
+	integration.GBPath = "./build/"
+	integration.NSPath = "./build/"
+	fmt.Println(HWPath)
 	return Load(&hwconfig)
 }
 
@@ -212,6 +226,170 @@ func Load(c *api.GetGateWayModeRegionResponse) error {
 	}
 
 	return proto.Unmarshal(b, c)
+}
+
+func LoadFromOriginFile() (*api.GetGateWayModeRegionResponse, error) {
+	pf := cf.UdpPacketForwarder{}
+	pf.ReadFrom(integration.PFPath + integration.PFName)
+
+	ns := cf.NetworkServer{}
+	ns.ReadFrom(integration.NSPath + integration.NSName)
+
+	// gb := cf.GatewayBridge{}
+	// gb.ReadFrom(integration.GBPath + integration.GBName)
+
+	var r *api.GateWayRegion
+
+	switch ns.Band.Name {
+	case "CN470":
+		sb := int32((pf.SX130xConfig.Radio0.Freq-470300000-1100000)/1600000 + 1)
+		r = &api.GateWayRegion{
+			RegionId: "CN470",
+			RegionConfig: &api.GateWayRegion_Cn470{
+				Cn470: &api.CN470Config{
+					SubBandId: sb,
+				},
+			},
+		}
+	case "EU868":
+		t := [](*api.TxGainLutItem){}
+		for _, v := range pf.SX130xConfig.Radio0.TxGainLut {
+			t = append(t, &api.TxGainLutItem{
+				Rfpower: int64(v.RFPower),
+				Pagain:  int64(v.PaGain),
+				Pwridx:  int64(v.PwrIdx),
+			})
+		}
+		r = &api.GateWayRegion{
+			RegionId: "EU868",
+			RegionConfig: &api.GateWayRegion_Eu868{
+				Eu868: &api.EU868Config{
+					TxFreq: &api.TXFreqItem{
+						Min: pf.SX130xConfig.Radio0.TxFreqMin,
+						Max: pf.SX130xConfig.Radio0.TxFreqMax,
+					},
+					Radio_0: &api.EU868Radio0{
+						Enable:          pf.SX130xConfig.Radio0.Enable,
+						Type:            pf.SX130xConfig.Radio0.Type,
+						SingleInputMode: pf.SX130xConfig.Radio0.SingleInputMode,
+						Freq:            pf.SX130xConfig.Radio0.Freq,
+						RssiOffset:      pf.SX130xConfig.Radio0.RssiOffset,
+						Rssicomp: &api.RssiTcomp{
+							Coeffa: pf.SX130xConfig.Radio0.RssiTcomp.CoeffA,
+							Coeffb: pf.SX130xConfig.Radio0.RssiTcomp.CoeffB,
+							Coeffc: pf.SX130xConfig.Radio0.RssiTcomp.CoeffC,
+							Coeffd: pf.SX130xConfig.Radio0.RssiTcomp.CoeffD,
+							Coeffe: pf.SX130xConfig.Radio0.RssiTcomp.CoeffE,
+						},
+						TxEnable:  pf.SX130xConfig.Radio0.TxEnable,
+						TxFreqMin: pf.SX130xConfig.Radio0.TxFreqMin,
+						TxFreqMax: pf.SX130xConfig.Radio0.TxFreqMax,
+						Txgainlut: t,
+					},
+					Radio_1: &api.EU868Radio1{
+						Enable:          pf.SX130xConfig.Radio1.Enable,
+						Type:            pf.SX130xConfig.Radio1.Type,
+						SingleInputMode: pf.SX130xConfig.Radio1.SingleInputMode,
+						Freq:            pf.SX130xConfig.Radio1.Freq,
+						RssiOffset:      pf.SX130xConfig.Radio1.RssiOffset,
+						Rssicomp: &api.RssiTcomp{
+							Coeffa: pf.SX130xConfig.Radio1.RssiTcomp.CoeffA,
+							Coeffb: pf.SX130xConfig.Radio1.RssiTcomp.CoeffB,
+							Coeffc: pf.SX130xConfig.Radio1.RssiTcomp.CoeffC,
+							Coeffd: pf.SX130xConfig.Radio1.RssiTcomp.CoeffD,
+							Coeffe: pf.SX130xConfig.Radio1.RssiTcomp.CoeffE,
+						},
+						TxEnable: pf.SX130xConfig.Radio1.TxEnable,
+					},
+					Chan_LoraStd: &api.EU868ChannelLoraStandard{
+						Enable:                pf.SX130xConfig.ChanLoraStd.Enable,
+						Radio:                 pf.SX130xConfig.ChanLoraStd.Radio,
+						If:                    pf.SX130xConfig.ChanLoraStd.IF,
+						Bandwidth:             pf.SX130xConfig.ChanLoraStd.Bandwidth,
+						SpreadFactor:          pf.SX130xConfig.ChanLoraStd.SpreadFactor,
+						ImplicitHdr:           pf.SX130xConfig.ChanLoraStd.ImplicitHdr,
+						Implicitpayloadlength: pf.SX130xConfig.ChanLoraStd.Implicitpayloadlength,
+						ImplicitcrcEn:         pf.SX130xConfig.ChanLoraStd.ImplicitcrcEn,
+						Implicitcoderate:      pf.SX130xConfig.ChanLoraStd.Implicitcoderate,
+					},
+					ChanMultiSF_0: &api.EU868ChannelMultiSF{
+						Enable: pf.SX130xConfig.ChanMultiSF0.Enable,
+						Radio:  pf.SX130xConfig.ChanMultiSF0.Radio,
+						Offset: pf.SX130xConfig.ChanMultiSF0.IF,
+					},
+					ChanMultiSF_1: &api.EU868ChannelMultiSF{
+						Enable: pf.SX130xConfig.ChanMultiSF1.Enable,
+						Radio:  pf.SX130xConfig.ChanMultiSF1.Radio,
+						Offset: pf.SX130xConfig.ChanMultiSF1.IF,
+					},
+					ChanMultiSF_2: &api.EU868ChannelMultiSF{
+						Enable: pf.SX130xConfig.ChanMultiSF2.Enable,
+						Radio:  pf.SX130xConfig.ChanMultiSF2.Radio,
+						Offset: pf.SX130xConfig.ChanMultiSF2.IF,
+					},
+					ChanMultiSF_3: &api.EU868ChannelMultiSF{
+						Enable: pf.SX130xConfig.ChanMultiSF3.Enable,
+						Radio:  pf.SX130xConfig.ChanMultiSF3.Radio,
+						Offset: pf.SX130xConfig.ChanMultiSF3.IF,
+					},
+					ChanMultiSF_4: &api.EU868ChannelMultiSF{
+						Enable: pf.SX130xConfig.ChanMultiSF4.Enable,
+						Radio:  pf.SX130xConfig.ChanMultiSF4.Radio,
+						Offset: pf.SX130xConfig.ChanMultiSF4.IF,
+					},
+					ChanMultiSF_5: &api.EU868ChannelMultiSF{
+						Enable: pf.SX130xConfig.ChanMultiSF5.Enable,
+						Radio:  pf.SX130xConfig.ChanMultiSF5.Radio,
+						Offset: pf.SX130xConfig.ChanMultiSF5.IF,
+					},
+					ChanMultiSF_6: &api.EU868ChannelMultiSF{
+						Enable: pf.SX130xConfig.ChanMultiSF6.Enable,
+						Radio:  pf.SX130xConfig.ChanMultiSF6.Radio,
+						Offset: pf.SX130xConfig.ChanMultiSF6.IF,
+					},
+					ChanMultiSF_7: &api.EU868ChannelMultiSF{
+						Enable: pf.SX130xConfig.ChanMultiSF7.Enable,
+						Radio:  pf.SX130xConfig.ChanMultiSF7.Radio,
+						Offset: pf.SX130xConfig.ChanMultiSF7.IF,
+					},
+				},
+			},
+		}
+	case "US915":
+		sb := int32((pf.SX130xConfig.Radio0.Freq-470300000-1100000)/1600000 + 1)
+		r = &api.GateWayRegion{
+			RegionId: "US915",
+			RegionConfig: &api.GateWayRegion_Us915{
+				Us915: &api.US915Config{
+					SubBandId: sb,
+				},
+			},
+		}
+	}
+	return &api.GetGateWayModeRegionResponse{
+		Mode: &api.GateWayMode{
+			Mode: "PF",
+			ModeConfig: &api.GateWayMode_Pf{
+				Pf: &api.PacketForwarder{
+					Protocol: &api.PFProtocol{
+						Settings: &api.PFProtocol_Gwmp{
+							Gwmp: &api.GWMPSSettings{
+								Port: &api.GWMPPort{
+									Uplink:   1700,
+									Downlink: 1700,
+								},
+								Server: "localhost",
+							},
+						},
+					},
+				},
+			},
+		},
+		Region: r,
+		Filter: &api.Filter{
+			WhiteList: &api.WhiteList{},
+		},
+	}, nil
 }
 
 func readFile(path string) ([]byte, error) {

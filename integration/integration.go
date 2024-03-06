@@ -13,19 +13,16 @@ const (
 	UdpPacketForwarder IntegrationType = iota
 	BasicsStation      IntegrationType = iota
 
-	BSPath = "/gw/opt/lora_pkt_fwd/"
-	PFPath = "/gw/opt/lora_pkt_fwd/"
-	GBPath = "/gw/etc/chirpstack-gateway-bridge/"
-	NSPath = "/gw/etc/chirpstack-network-server/"
-
-	// BSPath = "./build/"
-	// PFPath = "./build/"
-	// GBPath = "./build/"
-	// NSPath = "./build/"
-
 	PFName = "global_conf.json"
 	GBName = "chirpstack-gateway-bridge.toml"
 	NSName = "chirpstack-network-server.toml"
+)
+
+var (
+	BSPath string = "/gw/opt/lora_pkt_fwd/"
+	PFPath string = "/gw/opt/lora_pkt_fwd/"
+	GBPath string = "/gw/etc/chirpstack-gateway-bridge/"
+	NSPath string = "/gw/etc/chirpstack-network-server/"
 )
 
 // type Settings struct {

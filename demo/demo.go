@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"gitee.com/arya123/chirpstack-api/go/as/external/api"
@@ -17,28 +18,22 @@ import (
  */
 
 func main() {
-	err := hwconfig.Setup()
-	if err != nil {
-		panic(err)
-	}
+	err := hwconfig.SetupDebug()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	c, err := hwconfig.Get(true)
+	// c, err := hwconfig.Get(true)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	ns()
+	c, err := hwconfig.LoadFromOriginFile()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Admin: \nCA:  %s\nCrt: %s\nKey: %s\n", c.Mode.GetBs().GetAuth().GetCaCert(), c.Mode.GetBs().GetAuth().GetCliCert(), c.Mode.GetBs().GetAuth().GetCliKey())
-
-	c, err = hwconfig.Get(false)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Admin: \nCA:  %s\nCrt: %s\nKey: %s\n", c.Mode.GetBs().GetAuth().GetCaCert(), c.Mode.GetBs().GetAuth().GetCliCert(), c.Mode.GetBs().GetAuth().GetCliKey())
-
-	c, err = hwconfig.Get(true)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Admin: \nCA:  %s\nCrt: %s\nKey: %s\n", c.Mode.GetBs().GetAuth().GetCaCert(), c.Mode.GetBs().GetAuth().GetCliCert(), c.Mode.GetBs().GetAuth().GetCliKey())
+	b, err := json.MarshalIndent(&c, " ", "	  ")
+	fmt.Printf("%+v\n", string(b))
 
 	// bs()
 	// bs()
@@ -115,11 +110,44 @@ func ns() {
 				},
 			},
 		},
+		// Region: &api.GateWayRegion{
+		// 	RegionId: "US915",
+		// 	RegionConfig: &api.GateWayRegion_Us915{
+		// 		Us915: &api.US915Config{
+		// 			SubBandId: 2,
+		// 		},
+		// 	},
+		// },
+		// Region: &api.GateWayRegion{
+		// 	RegionId: "CN470",
+		// 	RegionConfig: &api.GateWayRegion_Cn470{
+		// 		Cn470: &api.CN470Config{
+		// 			SubBandId: 2,
+		// 		},
+		// 	},
+		// },
 		Region: &api.GateWayRegion{
-			RegionId: "US915",
-			RegionConfig: &api.GateWayRegion_Us915{
-				Us915: &api.US915Config{
-					SubBandId: 2,
+			RegionId: "EU868",
+			RegionConfig: &api.GateWayRegion_Eu868{
+				Eu868: &api.EU868Config{
+					Radio_1: &api.EU868Radio1{
+						Freq: 867500000,
+					},
+					ChanMultiSF_3: &api.EU868ChannelMultiSF{
+						Offset: -400000,
+					},
+					ChanMultiSF_4: &api.EU868ChannelMultiSF{
+						Offset: -200000,
+					},
+					ChanMultiSF_5: &api.EU868ChannelMultiSF{
+						Offset: 0,
+					},
+					ChanMultiSF_6: &api.EU868ChannelMultiSF{
+						Offset: 200000,
+					},
+					ChanMultiSF_7: &api.EU868ChannelMultiSF{
+						Offset: 400000,
+					},
 				},
 			},
 		},
