@@ -24,6 +24,20 @@ var (
 var hwconfig api.GetGateWayModeRegionResponse
 
 func Setup() error {
+	if _, err := os.Stat(HWPath + HWName); os.IsNotExist(err) {
+		hwconfig, err := LoadFromOriginFile()
+		if err != nil {
+			return err
+		}
+		c := api.ConfigGateWayModeRegionRequest{
+			Mode:   hwconfig.Mode,
+			Region: hwconfig.Region,
+			Filter: hwconfig.Filter,
+		}
+		Save(&c)
+	} else if err != nil {
+		return err
+	}
 	return Load(&hwconfig)
 }
 
@@ -33,7 +47,20 @@ func SetupDebug() error {
 	integration.PFPath = "./build/"
 	integration.GBPath = "./build/"
 	integration.NSPath = "./build/"
-	fmt.Println(HWPath)
+	if _, err := os.Stat(HWPath + HWName); os.IsNotExist(err) {
+		hwconfig, err := LoadFromOriginFile()
+		if err != nil {
+			return err
+		}
+		c := api.ConfigGateWayModeRegionRequest{
+			Mode:   hwconfig.Mode,
+			Region: hwconfig.Region,
+			Filter: hwconfig.Filter,
+		}
+		Save(&c)
+	} else if err != nil {
+		return err
+	}
 	return Load(&hwconfig)
 }
 
@@ -58,7 +85,7 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 		if r == nil {
 			return adr, errors.New("fail to parse region parameters")
 		}
-		b, err = band.NewBandEU868(r.GetRadio_1().GetFreq(), []int32{
+		b, err = band.NewBandEU868(r.GetRadio_0().GetFreq(), []int32{
 			r.GetChanMultiSF_3().GetOffset(),
 			r.GetChanMultiSF_4().GetOffset(),
 			r.GetChanMultiSF_5().GetOffset(),
@@ -188,7 +215,6 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 }
 
 func Get(isAdmin bool) (*api.GetGateWayModeRegionResponse, error) {
-
 	// proto: in order to achieve deep copy function
 	b, err := proto.Marshal(&hwconfig)
 	if err != nil {

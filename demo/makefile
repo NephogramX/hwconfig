@@ -2,7 +2,6 @@
 
 all:
 	go build
-	rm ./build/*
 	./demo
 
 buildin:

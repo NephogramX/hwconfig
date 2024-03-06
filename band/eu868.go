@@ -1,6 +1,8 @@
 package band
 
-import cf "github.com/NephogramX/hwconfig/configfile"
+import (
+	cf "github.com/NephogramX/hwconfig/configfile"
+)
 
 type EU868Band struct {
 	CenterFrequency int32
@@ -28,11 +30,9 @@ func (b *EU868Band) GetChannelSettings() *cf.Channel {
 	}{}
 	i := 0
 	for _, f := range b.FrequencyShift {
-		if f > 0 {
-			fs[i].Enable = true
-			fs[i].FrequencyShift = f
-			i++
-		}
+		fs[i].Enable = true
+		fs[i].FrequencyShift = f
+		i++
 	}
 
 	return &cf.Channel{

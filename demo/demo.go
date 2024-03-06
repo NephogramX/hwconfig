@@ -19,16 +19,17 @@ import (
 
 func main() {
 	err := hwconfig.SetupDebug()
-	// if err != nil {
-	// 	panic(err)
-	// }
+	if err != nil {
+		panic(err)
+	}
 
 	// c, err := hwconfig.Get(true)
 	// if err != nil {
 	// 	panic(err)
 	// }
-	ns()
-	c, err := hwconfig.LoadFromOriginFile()
+	// ns()
+
+	c, err := hwconfig.Get(true)
 	if err != nil {
 		panic(err)
 	}
@@ -130,7 +131,7 @@ func ns() {
 			RegionId: "EU868",
 			RegionConfig: &api.GateWayRegion_Eu868{
 				Eu868: &api.EU868Config{
-					Radio_1: &api.EU868Radio1{
+					Radio_0: &api.EU868Radio0{
 						Freq: 867500000,
 					},
 					ChanMultiSF_3: &api.EU868ChannelMultiSF{
