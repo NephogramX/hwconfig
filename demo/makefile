@@ -2,7 +2,8 @@
 
 all:
 	go build
-	./demo
+	rm ./build/*
+	./demo.exe
 
 buildin:
 	scp ./build/global_conf.json root@10.6.6.6:/gw/opt/lora_pkt_fwd/

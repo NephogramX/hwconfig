@@ -92,12 +92,18 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 			r.GetChanMultiSF_6().GetOffset(),
 			r.GetChanMultiSF_7().GetOffset(),
 		})
+	case "IN865":
+		b, err = band.NewBandIN865()
+	case "RU864":
+		b, err = band.NewBandRU864()
 	case "US915":
 		r := c.GetRegion().GetUs915()
 		if r == nil {
 			return adr, errors.New("fail to parse region parameters")
 		}
 		b, err = band.NewBandUS915(r.GetSubBandId())
+	case "AU915":
+		b, err = band.NewBandAU915(1)
 	default:
 		err = fmt.Errorf("unsupport region: %v", c.Region.RegionId)
 	}
@@ -268,7 +274,7 @@ func Load(c *api.GetGateWayModeRegionResponse) error {
 	return proto.Unmarshal(b, c)
 }
 
-func LoadFromOriginFile() (*api.GetGateWayModeRegionResponse, error) {
+func LoadFromOriginFile( /*m api.GateWayMode*/ ) (*api.GetGateWayModeRegionResponse, error) {
 	pf := cf.UdpPacketForwarder{}
 	pf.ReadFrom(integration.PFPath + integration.PFName)
 

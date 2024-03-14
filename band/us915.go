@@ -28,8 +28,8 @@ func (b *US915Band) String() string {
 func (b US915Band) GetChannelSettings() *cf.Channel {
 	return &cf.Channel{
 		RaidoCneterFrequency: [2]int32{
-			902300000 + 1600000*(b.subbandIndex-1) + 1000000,
-			902300000 + 1600000*(b.subbandIndex-1) + 300000,
+			902300000 + 1600000*(b.subbandIndex-1) + 400000,
+			902300000 + 1600000*(b.subbandIndex-1) + 1100000,
 		},
 		MinTxFrequency: 902000000,
 		MaxTxFrequency: 928000000,
