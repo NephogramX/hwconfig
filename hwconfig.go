@@ -25,7 +25,7 @@ var hwconfig api.GetGateWayModeRegionResponse
 
 func Setup() error {
 	if _, err := os.Stat(HWPath + HWName); os.IsNotExist(err) {
-		hwconfig, err := LoadFromOriginFile()
+		hwconfig, err := LoadBuiltinConfig()
 		if err != nil {
 			return err
 		}
@@ -48,7 +48,7 @@ func SetupDebug() error {
 	integration.GBPath = "./build/"
 	integration.NSPath = "./build/"
 	if _, err := os.Stat(HWPath + HWName); os.IsNotExist(err) {
-		hwconfig, err := LoadFromOriginFile()
+		hwconfig, err := LoadBuiltinConfig()
 		if err != nil {
 			return err
 		}
@@ -104,6 +104,8 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 		b, err = band.NewBandUS915(r.GetSubBandId())
 	case "AU915":
 		b, err = band.NewBandAU915(1)
+	case "KR920":
+		b, err = band.NewBandKR920(1)
 	default:
 		err = fmt.Errorf("unsupport region: %v", c.Region.RegionId)
 	}
@@ -132,7 +134,7 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 			adr = [2]int32{m.GetAdr().GetDrIdMin(), m.GetAdr().GetDrIdMax()}
 		}
 
-		i, err = integration.NewBuildinIntegration(&integration.BuildinNSSettings{
+		i, err = integration.NewBuiltinIntegration(&integration.BuiltinNSSettings{
 			Band: b,
 			LoRaSettings: integration.LoRaSettings{
 				ADRSettings: integration.ADRSettings{
@@ -274,15 +276,24 @@ func Load(c *api.GetGateWayModeRegionResponse) error {
 	return proto.Unmarshal(b, c)
 }
 
-func LoadFromOriginFile( /*m api.GateWayMode*/ ) (*api.GetGateWayModeRegionResponse, error) {
+func LoadBuiltinConfig( /*m api.GateWayMode*/ ) (*api.GetGateWayModeRegionResponse, error) {
 	pf := cf.UdpPacketForwarder{}
-	pf.ReadFrom(integration.PFPath + integration.PFName)
+	err := pf.ReadFrom(integration.PFPath + integration.PFName)
+	if err != nil {
+		return nil, err
+	}
 
 	ns := cf.NetworkServer{}
-	ns.ReadFrom(integration.NSPath + integration.NSName)
+	err = ns.ReadFrom(integration.NSPath + integration.NSName)
+	if err != nil {
+		return nil, err
+	}
 
-	// gb := cf.GatewayBridge{}
-	// gb.ReadFrom(integration.GBPath + integration.GBName)
+	gb := cf.GatewayBridge{}
+	err = gb.ReadFrom(integration.GBPath + integration.GBName)
+	if err != nil {
+		return nil, err
+	}
 
 	var r *api.GateWayRegion
 
@@ -414,7 +425,7 @@ func LoadFromOriginFile( /*m api.GateWayMode*/ ) (*api.GetGateWayModeRegionRespo
 	}
 	return &api.GetGateWayModeRegionResponse{
 		Mode: &api.GateWayMode{
-			Mode: "PF",
+			Mode: "NS",
 			ModeConfig: &api.GateWayMode_Pf{
 				Pf: &api.PacketForwarder{
 					Protocol: &api.PFProtocol{
@@ -436,6 +447,14 @@ func LoadFromOriginFile( /*m api.GateWayMode*/ ) (*api.GetGateWayModeRegionRespo
 			WhiteList: &api.WhiteList{},
 		},
 	}, nil
+}
+
+func LoadBsConfig() (*api.GetGateWayModeRegionResponse, error) {
+	return &api.GetGateWayModeRegionResponse{}, nil
+}
+
+func LoadPfConfig() (*api.GetGateWayModeRegionResponse, error) {
+	return &api.GetGateWayModeRegionResponse{}, nil
 }
 
 func readFile(path string) ([]byte, error) {

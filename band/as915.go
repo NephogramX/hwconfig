@@ -1,36 +1,44 @@
 package band
 
-import cf "github.com/NephogramX/hwconfig/configfile"
+import (
+	cf "github.com/NephogramX/hwconfig/configfile"
+)
 
-type RU864Band struct {
+type AS915Band struct {
+	subbandIndex int32
 }
 
-func NewBandRU864() (*RU864Band, error) {
-	return &RU864Band{}, nil
+func NewBandAS915() (*AS915Band, error) {
+	return &AS915Band{}, nil
 }
 
-func (b *RU864Band) String() string {
-	return "RU864"
+func (b *AS915Band) String() string {
+	return "AS915"
 }
 
-func (b *RU864Band) GetChannelSettings() *cf.Channel {
+func (b AS915Band) GetChannelSettings() *cf.Channel {
 	return &cf.Channel{
-		RaidoCneterFrequency: [2]int32{864500000, 869000000},
-		MinTxFrequency:       864000000,
-		MaxTxFrequency:       870000000,
-		RssiOffset:           -215.4,
+		RaidoCneterFrequency: [2]int32{
+			915200000 + 1600000*(b.subbandIndex-1) + 400000,
+			915200000 + 1600000*(b.subbandIndex-1) + 1100000,
+		},
+		MinTxFrequency: 915000000,
+		MaxTxFrequency: 928000000,
+		RssiOffset:     -215.4,
 		ChanMultiSF: [8]cf.ChanMultiSF{
-			{Enable: true, Radio: 1, IF: -100000},
-			{Enable: true, Radio: 1, IF: 100000},
 			{Enable: true, Radio: 0, IF: -400000},
 			{Enable: true, Radio: 0, IF: -200000},
 			{Enable: true, Radio: 0, IF: 0},
 			{Enable: true, Radio: 0, IF: 200000},
-			{Enable: true, Radio: 0, IF: 400000},
-			{Enable: false},
+			{Enable: true, Radio: 1, IF: -300000},
+			{Enable: true, Radio: 1, IF: -100000},
+			{Enable: true, Radio: 1, IF: 100000},
+			{Enable: true, Radio: 1, IF: 300000},
 		},
 		ChanLoRaStd: cf.ChanLoRaStd{
-			ChanMultiSF: cf.ChanMultiSF{Enable: false},
+			ChanMultiSF:  cf.ChanMultiSF{Enable: true, Radio: 0, IF: 300000},
+			Bandwidth:    500000,
+			SpreadFactor: 8,
 		},
 		ChanLoRaFsk: cf.ChanLoRaFSK{
 			ChanMultiSF: cf.ChanMultiSF{Enable: false},
@@ -56,19 +64,11 @@ func (b *RU864Band) GetChannelSettings() *cf.Channel {
 	}
 }
 
-func (b *RU864Band) GetExtraChannels() *[]cf.ExtraChannels {
-	ec := make([]cf.ExtraChannels, 5)
-	ecList := [5]int32{864100000, 864300000, 864500000, 864700000, 864900000}
-
-	for i := range ecList {
-		ec[i].Frequency = ecList[i]
-		ec[i].MinDr = 0
-		ec[i].MaxDr = 5
-	}
-
-	return &ec
+func (b AS915Band) GetExtraChannels() *[]cf.ExtraChannels {
+	return nil
 }
 
-func (b *RU864Band) GetUplinkChannels() *[]int32 {
-	return nil
+func (b AS915Band) GetUplinkChannels() *[]int32 {
+	var ch int32 = (b.subbandIndex - 1) * 8
+	return &[]int32{ch, ch + 1, ch + 2, ch + 3, ch + 4, ch + 5, ch + 6, ch + 7}
 }

@@ -22,7 +22,7 @@ func NewPacketForwarderIntegration(s *PacketForwarderSettings) (*PacketForwarder
 }
 
 func (i *PacketForwarderIntegration) Type() IntegrationType {
-	return Buildin
+	return Builtin
 }
 
 func (i *PacketForwarderIntegration) HandleBasicsStationUri() *cf.BasicsStation {

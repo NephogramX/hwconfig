@@ -9,7 +9,7 @@ type CommSettings = cf.Comm
 type ServerSettings = cf.Server
 
 const (
-	Buildin            IntegrationType = iota
+	Builtin            IntegrationType = iota
 	UdpPacketForwarder IntegrationType = iota
 	BasicsStation      IntegrationType = iota
 
@@ -83,7 +83,7 @@ func ApplySettings(i Integration) error {
 }
 
 // func GetSettings() Integration {
-// 	return &BuildinIntegration{}
+// 	return &BuiltinIntegration{}
 // }
 
 // func saveSettings(path string) Integration {

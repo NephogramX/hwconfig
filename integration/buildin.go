@@ -25,43 +25,43 @@ type LoRaSettings struct {
 	DownlinkTXPower int32
 }
 
-type BuildinNSSettings struct {
+type BuiltinNSSettings struct {
 	Band band.Band
 	LoRaSettings
 	CommSettings
 }
 
-type BuildinIntegration struct {
-	BuildinNSSettings
+type BuiltinIntegration struct {
+	BuiltinNSSettings
 }
 
-func NewBuildinIntegration(s *BuildinNSSettings) (*BuildinIntegration, error) {
-	return &BuildinIntegration{
-		BuildinNSSettings: *s,
+func NewBuiltinIntegration(s *BuiltinNSSettings) (*BuiltinIntegration, error) {
+	return &BuiltinIntegration{
+		BuiltinNSSettings: *s,
 	}, nil
 }
 
-func (i *BuildinIntegration) Type() IntegrationType {
-	return Buildin
+func (i *BuiltinIntegration) Type() IntegrationType {
+	return Builtin
 }
 
-func (i *BuildinIntegration) HandleBasicsStationUri() *cf.BasicsStation {
+func (i *BuiltinIntegration) HandleBasicsStationUri() *cf.BasicsStation {
 	return nil
 }
 
-func (i *BuildinIntegration) HandleBasicsStationKey() *cf.BasicsStation {
+func (i *BuiltinIntegration) HandleBasicsStationKey() *cf.BasicsStation {
 	return nil
 }
 
-func (i *BuildinIntegration) HandleBasicsStationCrt() *cf.BasicsStation {
+func (i *BuiltinIntegration) HandleBasicsStationCrt() *cf.BasicsStation {
 	return nil
 }
 
-func (i *BuildinIntegration) HandleBasicsStationTrust() *cf.BasicsStation {
+func (i *BuiltinIntegration) HandleBasicsStationTrust() *cf.BasicsStation {
 	return nil
 }
 
-func (i *BuildinIntegration) HandleUdpPacketForwarder() *cf.UdpPacketForwarder {
+func (i *BuiltinIntegration) HandleUdpPacketForwarder() *cf.UdpPacketForwarder {
 	return cf.NewUdpPacketForwarderCF(&cf.PFSettings{
 		Channel: *(i.Band.GetChannelSettings()),
 		Server: cf.Server{
@@ -77,7 +77,7 @@ func (i *BuildinIntegration) HandleUdpPacketForwarder() *cf.UdpPacketForwarder {
 	})
 }
 
-func (i *BuildinIntegration) HandleGatewayBridge() *cf.GatewayBridge {
+func (i *BuiltinIntegration) HandleGatewayBridge() *cf.GatewayBridge {
 	return cf.NewGatewayBridge(&cf.GBSettings{
 		Backend: cf.Backend{
 			Type: cf.SemtechUDP,
@@ -94,7 +94,7 @@ func (i *BuildinIntegration) HandleGatewayBridge() *cf.GatewayBridge {
 	})
 }
 
-func (i *BuildinIntegration) HandleNetworkServer() *cf.NetworkServer {
+func (i *BuiltinIntegration) HandleNetworkServer() *cf.NetworkServer {
 	return cf.NewNetworkServer(&cf.NSSettings{
 		NetID:                 i.NetID,
 		BandName:              i.Band.String(),
