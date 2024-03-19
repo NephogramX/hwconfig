@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"os"
 	"strconv"
 
 	cf "github.com/NephogramX/hwconfig/configfile"
@@ -123,6 +124,8 @@ func (i *BasicsStationIntegration) HandleBasicsStationUri() *cf.BasicsStation {
 	if i.Uri == nil {
 		return nil
 	}
+	os.Remove(BSPath + "cups.uri")
+	os.Remove(BSPath + "tc.uri")
 	return cf.NewAuthenticationFile(cf.File{Name: i.filename + ".uri", Path: BSPath}, i.Uri)
 }
 
@@ -130,6 +133,8 @@ func (i *BasicsStationIntegration) HandleBasicsStationKey() *cf.BasicsStation {
 	if i.Key == nil {
 		return nil
 	}
+	os.Remove(BSPath + "cups.key")
+	os.Remove(BSPath + "tc.key")
 	return cf.NewAuthenticationFile(cf.File{Name: i.filename + ".key", Path: BSPath}, i.Key)
 }
 
@@ -137,6 +142,8 @@ func (i *BasicsStationIntegration) HandleBasicsStationCrt() *cf.BasicsStation {
 	if i.ClientCert == nil {
 		return nil
 	}
+	os.Remove(BSPath + "cups.crt")
+	os.Remove(BSPath + "tc.crt")
 	return cf.NewAuthenticationFile(cf.File{Name: i.filename + ".crt", Path: BSPath}, i.ClientCert)
 }
 
@@ -144,6 +151,8 @@ func (i *BasicsStationIntegration) HandleBasicsStationTrust() *cf.BasicsStation 
 	if i.ServerCert == nil {
 		return nil
 	}
+	os.Remove(BSPath + "cups.trust")
+	os.Remove(BSPath + "tc.trust")
 	return cf.NewAuthenticationFile(cf.File{Name: i.filename + ".trust", Path: BSPath}, i.ServerCert)
 }
 

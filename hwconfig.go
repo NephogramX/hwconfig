@@ -426,19 +426,26 @@ func LoadBuiltinConfig( /*m api.GateWayMode*/ ) (*api.GetGateWayModeRegionRespon
 	return &api.GetGateWayModeRegionResponse{
 		Mode: &api.GateWayMode{
 			Mode: "NS",
-			ModeConfig: &api.GateWayMode_Pf{
-				Pf: &api.PacketForwarder{
-					Protocol: &api.PFProtocol{
-						Settings: &api.PFProtocol_Gwmp{
-							Gwmp: &api.GWMPSSettings{
-								Port: &api.GWMPPort{
-									Uplink:   1700,
-									Downlink: 1700,
-								},
-								Server: "localhost",
-							},
-						},
+			ModeConfig: &api.GateWayMode_Ns{
+				Ns: &api.BuiltInNetworkServer{
+					NetworkId: ns.NetId,
+					Adr: &api.NSADR{
+						Enable: !ns.DisableADR,
+						Margin: ns.InstallationMargin,
 					},
+					Rx1: &api.NSRX1{
+						DrOffset: ns.Rx1DROffset,
+						Delay:    ns.Rx1Delay,
+					},
+					Rx2: &api.NSRX2{
+						Freq:    ns.Rx2Frequency,
+						DrIndex: ns.Rx2DR,
+					},
+					// DwellTimeLimit: &api.NSDwellTimeLimit{
+					// 	Uplink:   int32(ns.UplinkDwellTime400Ms),
+					// 	Downlink: int32(ns.DownlinkDwellTime400Ms),
+					// },
+					DownlinkTxPower: ns.DownlinkTxPower,
 				},
 			},
 		},

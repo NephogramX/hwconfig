@@ -10,8 +10,9 @@ import (
 
 func main() {
 	setup()
+	get()
 
-	build("NS", KR920)
+	// build("BS", EU868)
 }
 
 func setup() {

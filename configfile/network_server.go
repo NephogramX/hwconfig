@@ -29,6 +29,8 @@ type NsMqtt struct {
 
 type Band struct {
 	Name string `toml:"name"`
+	// UplinkDwellTime400Ms   int    `toml:"uplink_dwell_time_400ms`
+	// DownlinkDwellTime400Ms int    `toml:"downlink_dwell_time_400ms`
 }
 
 type NsBackend struct {
