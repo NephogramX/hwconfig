@@ -441,10 +441,10 @@ func LoadBuiltinConfig( /*m api.GateWayMode*/ ) (*api.GetGateWayModeRegionRespon
 						Freq:    ns.Rx2Frequency,
 						DrIndex: ns.Rx2DR,
 					},
-					// DwellTimeLimit: &api.NSDwellTimeLimit{
-					// 	Uplink:   int32(ns.UplinkDwellTime400Ms),
-					// 	Downlink: int32(ns.DownlinkDwellTime400Ms),
-					// },
+					DwellTimeLimit: &api.NSDwellTimeLimit{
+						Uplink:   -1,
+						Downlink: -1,
+					},
 					DownlinkTxPower: ns.DownlinkTxPower,
 				},
 			},

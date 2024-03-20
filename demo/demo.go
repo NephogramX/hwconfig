@@ -12,7 +12,7 @@ func main() {
 	setup()
 	get()
 
-	// build("BS", EU868)
+	build("NS", EU868)
 }
 
 func setup() {
