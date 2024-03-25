@@ -12,7 +12,7 @@ func main() {
 	setup()
 	get()
 
-	build("NS", EU868)
+	// build("NS", US915)
 }
 
 func setup() {
@@ -39,7 +39,7 @@ func build(m string, r *api.GateWayRegion) {
 						},
 						Rx1: &api.NSRX1{
 							DrOffset: 0,
-							Delay:    -1,
+							Delay:    0,
 						},
 						Rx2: &api.NSRX2{
 							Freq:    -1,

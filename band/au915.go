@@ -79,5 +79,5 @@ func (b AU915Band) GetExtraChannels() *[]cf.ExtraChannels {
 
 func (b AU915Band) GetUplinkChannels() *[]int32 {
 	var ch int32 = (b.subbandIndex - 1) * 8
-	return &[]int32{ch, ch + 1, ch + 2, ch + 3, ch + 4, ch + 5, ch + 6, ch + 7}
+	return &[]int32{ch, ch + 1, ch + 2, ch + 3, ch + 4, ch + 5, ch + 6, ch + 7, 64 + b.subbandIndex}
 }

@@ -413,7 +413,7 @@ func LoadBuiltinConfig( /*m api.GateWayMode*/ ) (*api.GetGateWayModeRegionRespon
 			},
 		}
 	case "US915":
-		sb := int32((pf.SX130xConfig.Radio0.Freq-470300000-1100000)/1600000 + 1)
+		sb := int32((pf.SX130xConfig.Radio0.Freq-902300000-400000)/1600000 + 1)
 		r = &api.GateWayRegion{
 			RegionId: "US915",
 			RegionConfig: &api.GateWayRegion_Us915{
