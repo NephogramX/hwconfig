@@ -50,7 +50,7 @@ var (
 		RegionId: "US915",
 		RegionConfig: &api.GateWayRegion_Us915{
 			Us915: &api.US915Config{
-				SubBandId: 2,
+				SubBandId: 8,
 			},
 		},
 	}

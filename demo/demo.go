@@ -10,9 +10,7 @@ import (
 
 func main() {
 	setup()
-	get()
-
-	// build("NS", US915)
+	build("NS", US915)
 }
 
 func setup() {

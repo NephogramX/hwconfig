@@ -15,22 +15,23 @@ func (b *RU864Band) String() string {
 
 func (b *RU864Band) GetChannelSettings() *cf.Channel {
 	return &cf.Channel{
-		RaidoCneterFrequency: [2]int32{864500000, 869000000},
+		RaidoCneterFrequency: [2]int32{868100000, 868800000},
 		MinTxFrequency:       864000000,
 		MaxTxFrequency:       870000000,
 		RssiOffset:           -215.4,
 		ChanMultiSF: [8]cf.ChanMultiSF{
 			{Enable: true, Radio: 1, IF: -100000},
 			{Enable: true, Radio: 1, IF: 100000},
+			{Enable: true, Radio: 1, IF: 300000},
 			{Enable: true, Radio: 0, IF: -400000},
 			{Enable: true, Radio: 0, IF: -200000},
 			{Enable: true, Radio: 0, IF: 0},
 			{Enable: true, Radio: 0, IF: 200000},
 			{Enable: true, Radio: 0, IF: 400000},
-			{Enable: false},
 		},
 		ChanLoRaStd: cf.ChanLoRaStd{
-			ChanMultiSF: cf.ChanMultiSF{Enable: false},
+			ChanMultiSF: cf.ChanMultiSF{Enable: true, Radio: 1, IF: -400000},
+			Bandwidth:   250000, SpreadFactor: 7,
 		},
 		ChanLoRaFsk: cf.ChanLoRaFSK{
 			ChanMultiSF: cf.ChanMultiSF{Enable: false},
@@ -57,14 +58,18 @@ func (b *RU864Band) GetChannelSettings() *cf.Channel {
 }
 
 func (b *RU864Band) GetExtraChannels() *[]cf.ExtraChannels {
-	ec := make([]cf.ExtraChannels, 5)
-	ecList := [5]int32{864100000, 864300000, 864500000, 864700000, 864900000}
+	ec := make([]cf.ExtraChannels, 7)
+	ecList := [6]int32{867700000, 867900000, 868100000, 868300000, 868500000, 868700000}
 
 	for i := range ecList {
 		ec[i].Frequency = ecList[i]
 		ec[i].MinDr = 0
 		ec[i].MaxDr = 5
 	}
+
+	ec[6].Frequency = 868400000
+	ec[6].MinDr = 0
+	ec[6].MaxDr = 6
 
 	return &ec
 }

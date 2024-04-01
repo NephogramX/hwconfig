@@ -13,7 +13,7 @@ type US915Band struct {
 }
 
 func NewBandUS915(subbandIndex int32) (*US915Band, error) {
-	if subbandIndex < 0 || subbandIndex > 7 {
+	if subbandIndex < 0 || subbandIndex > 8 {
 		return nil, errors.New(fmt.Sprint("unsupported subband index:", subbandIndex))
 	}
 	return &US915Band{
