@@ -7,7 +7,7 @@ import (
 
 	cf "github.com/NephogramX/hwconfig/configfile"
 
-	"gitee.com/arya123/chirpstack-api/go/as/external/api"
+	"gitee.com/dfrobotcd/chirpstack-api/go/as/external/api"
 	"github.com/NephogramX/hwconfig/band"
 	"github.com/NephogramX/hwconfig/integration"
 	"github.com/golang/protobuf/proto"

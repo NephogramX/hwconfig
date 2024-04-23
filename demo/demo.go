@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gitee.com/arya123/chirpstack-api/go/as/external/api"
+	"gitee.com/dfrobotcd/chirpstack-api/go/as/external/api"
 	"github.com/NephogramX/hwconfig"
 )
 

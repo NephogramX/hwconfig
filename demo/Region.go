@@ -1,6 +1,6 @@
 package main
 
-import "gitee.com/arya123/chirpstack-api/go/as/external/api"
+import "gitee.com/dfrobotcd/chirpstack-api/go/as/external/api"
 
 var (
 	CN470 *api.GateWayRegion = &api.GateWayRegion{
