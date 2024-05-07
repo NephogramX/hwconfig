@@ -25,26 +25,6 @@ var (
 	NSPath string = "/gw/etc/chirpstack-network-server/"
 )
 
-// type Settings struct {
-// 	Integration
-// }
-
-// func (s *Settings) GobMarshal() ([]byte, error) {
-// 	var buf bytes.Buffer
-// 	encoder := gob.NewEncoder(&buf)
-// 	err := encoder.Encode(s)
-// 	return buf.Bytes(), err
-// }
-
-// func (s *Settings) GobUnmarshal(b []byte) error {
-// 	buf := bytes.NewBuffer(b)
-// 	decoder := gob.NewDecoder(buf)
-// 	if err := decoder.Decode(s); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
 type Integration interface {
 	Type() IntegrationType
 	HandleBasicsStationUri() *cf.BasicsStation
@@ -81,15 +61,3 @@ func ApplySettings(i Integration) error {
 	}
 	return nil
 }
-
-// func GetSettings() Integration {
-// 	return &BuiltinIntegration{}
-// }
-
-// func saveSettings(path string) Integration {
-
-// }
-
-// func loadSettings(path string) Integration {
-
-// }

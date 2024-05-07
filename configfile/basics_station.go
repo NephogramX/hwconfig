@@ -21,7 +21,7 @@ func (c *BasicsStation) Write() error {
 	if c == nil {
 		return nil
 	}
-	return writeFile(c.File.String(), c.Content)
+	return WriteFile(c.File.String(), c.Content)
 }
 
 func (c *BasicsStation) ReadFrom(p string) error {
@@ -33,7 +33,7 @@ func (c *BasicsStation) ReadFrom(p string) error {
 		Path: filepath.Dir(p),
 	}
 	var err error
-	c.Content, err = readFile(p)
+	c.Content, err = ReadFile(p)
 	if err != nil {
 		return err
 	}

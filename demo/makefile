@@ -2,7 +2,8 @@
 
 all:
 	go build
-	if [ Test-Path "./build/*"]; then rm ./build/*; fi
+	# rm ./build/ -r
+	# mkdir ./build
 	./demo.exe
 
 builtin: all

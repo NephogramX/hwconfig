@@ -1,13 +1,14 @@
 package hwconfig
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 
 	cf "github.com/NephogramX/hwconfig/configfile"
 
-	"gitee.com/arya123/chirpstack-api/go/as/external/api"
+	"gitee.com/dfrobotcd/chirpstack-api/go/as/external/api"
 	"github.com/NephogramX/hwconfig/band"
 	"github.com/NephogramX/hwconfig/integration"
 	"github.com/golang/protobuf/proto"
@@ -23,9 +24,9 @@ var (
 
 var hwconfig api.GetGateWayModeRegionResponse
 
-func Setup() error {
+func Setup(region string) error {
 	if _, err := os.Stat(HWPath + HWName); os.IsNotExist(err) {
-		hwconfig, err := LoadBuiltinConfig()
+		restoreDefault(region)
 		if err != nil {
 			return err
 		}
@@ -34,11 +35,11 @@ func Setup() error {
 			Region: hwconfig.Region,
 			Filter: hwconfig.Filter,
 		}
-		Save(&c)
+		save(&c)
 	} else if err != nil {
 		return err
 	}
-	return Load(&hwconfig)
+	return load(&hwconfig)
 }
 
 func SetupDebug() error {
@@ -48,7 +49,7 @@ func SetupDebug() error {
 	integration.GBPath = "./build/"
 	integration.NSPath = "./build/"
 	if _, err := os.Stat(HWPath + HWName); os.IsNotExist(err) {
-		hwconfig, err := LoadBuiltinConfig()
+		err = restoreDefault("EU868")
 		if err != nil {
 			return err
 		}
@@ -57,61 +58,411 @@ func SetupDebug() error {
 			Region: hwconfig.Region,
 			Filter: hwconfig.Filter,
 		}
-		Save(&c)
+		return save(&c)
 	} else if err != nil {
 		return err
+	} else {
+		return load(&hwconfig)
 	}
-	return Load(&hwconfig)
 }
 
-func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
+func GetMode() *api.GateWayMode {
+	return hwconfig.Mode
+}
+
+func GetRegion() *api.GateWayRegion {
+	return hwconfig.Region
+}
+
+func GetFilter() *api.Filter {
+	return hwconfig.Filter
+}
+
+func SetMode(c *api.GateWayMode) error {
+	if c == nil {
+		return fmt.Errorf("illegal parameters: config is nil")
+	}
+
+	tmp := &api.ConfigGateWayModeRegionRequest{
+		Mode:   c,
+		Region: hwconfig.Region,
+		Filter: hwconfig.Filter,
+	}
+
+	if err := applySettings(tmp); err != nil {
+		return err
+	}
+
+	hwconfig.Mode = c
+	return save(tmp)
+}
+
+func SetRegion(c *api.GateWayRegion) error {
+	if c == nil {
+		return fmt.Errorf("illegal parameters: config is nil")
+	}
+
+	tmp := &api.ConfigGateWayModeRegionRequest{
+		Mode:   hwconfig.Mode,
+		Region: c,
+		Filter: hwconfig.Filter,
+	}
+
+	if err := applySettings(tmp); err != nil {
+		return err
+	}
+
+	hwconfig.Region = c
+	return save(tmp)
+}
+
+func SetFilter(c *api.Filter) error {
+	if c == nil {
+		return fmt.Errorf("illegal parameters: config is nil")
+	}
+
+	tmp := &api.ConfigGateWayModeRegionRequest{
+		Mode:   hwconfig.Mode,
+		Region: hwconfig.Region,
+		Filter: c,
+	}
+
+	if err := applySettings(tmp); err != nil {
+		return err
+	}
+
+	hwconfig.Filter = c
+	return save(tmp)
+}
+
+// private tools
+
+func save(c *api.ConfigGateWayModeRegionRequest) error {
+	b, err := proto.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	// b, err := json.MarshalIndent(c, "  ", "   ")
+	// if err != nil {
+	// 	return err
+	// }
+
+	return cf.WriteFile(HWPath+HWName, b)
+}
+
+func load(c *api.GetGateWayModeRegionResponse) error {
+	b, err := cf.ReadFile(HWPath + HWName)
+	if err != nil {
+		return err
+	}
+	// file, err := os.Open(HWPath + HWName)
+	// if err != nil {
+	// 	return fmt.Errorf("error opening file: %v, %v", HWPath+HWName, err)
+	// }
+	// defer file.Close()
+
+	return proto.Unmarshal(b, c)
+}
+
+func transCfTxgainlut(c []*cf.TxGainLutItem) []*api.TxGainLutItem {
+	out := []*api.TxGainLutItem{}
+
+	for _, v := range c {
+		out = append(out, &api.TxGainLutItem{
+			Rfpower: int64(v.RFPower),
+			Pagain:  int64(v.PaGain),
+			Pwridx:  int64(v.PwrIdx),
+		})
+	}
+
+	return out
+}
+
+func transCfChanMultiSF(c *cf.ChanMultiSF) *api.EU868ChannelMultiSF {
+	return &api.EU868ChannelMultiSF{
+		Enable: c.Enable,
+		Radio:  c.Radio,
+		Offset: c.IF,
+	}
+}
+
+func transCfChannel(c *cf.Channel) *api.EU868Config {
+	return &api.EU868Config{
+		Radio_0: &api.EU868Radio0{
+			Enable:          c.Radio0.Enable,
+			Type:            c.Radio0.Type,
+			SingleInputMode: c.Radio0.SingleInputMode,
+			Freq:            c.Radio0.Freq,
+			RssiOffset:      c.Radio0.RssiOffset,
+			Rssicomp: &api.RssiTcomp{
+				Coeffa: c.Radio0.RssiTcomp.CoeffA,
+				Coeffb: c.Radio0.RssiTcomp.CoeffB,
+				Coeffc: c.Radio0.RssiTcomp.CoeffC,
+				Coeffd: c.Radio0.RssiTcomp.CoeffD,
+				Coeffe: c.Radio0.RssiTcomp.CoeffE,
+			},
+			TxEnable:  c.Radio0.TxEnable,
+			TxFreqMin: c.Radio0.TxFreqMin,
+			TxFreqMax: c.Radio0.TxFreqMax,
+			Txgainlut: transCfTxgainlut(c.Radio0.TxGainLut),
+		},
+		Radio_1: &api.EU868Radio1{
+			Enable:          c.Radio1.Enable,
+			Type:            c.Radio1.Type,
+			SingleInputMode: c.Radio1.SingleInputMode,
+			Freq:            c.Radio1.Freq,
+			RssiOffset:      c.Radio1.RssiOffset,
+			Rssicomp: &api.RssiTcomp{
+				Coeffa: c.Radio1.RssiTcomp.CoeffA,
+				Coeffb: c.Radio1.RssiTcomp.CoeffB,
+				Coeffc: c.Radio1.RssiTcomp.CoeffC,
+				Coeffd: c.Radio1.RssiTcomp.CoeffD,
+				Coeffe: c.Radio1.RssiTcomp.CoeffE,
+			},
+			TxEnable: c.Radio1.TxEnable,
+		},
+		Chan_LoraStd: &api.EU868ChannelLoraStandard{
+			Enable:                c.ChanLoraStd.Enable,
+			Radio:                 c.ChanLoraStd.Radio,
+			If:                    c.ChanLoraStd.IF,
+			Bandwidth:             c.ChanLoraStd.Bandwidth,
+			SpreadFactor:          c.ChanLoraStd.SpreadFactor,
+			ImplicitHdr:           c.ChanLoraStd.ImplicitHdr,
+			Implicitpayloadlength: c.ChanLoraStd.Implicitpayloadlength,
+			ImplicitcrcEn:         c.ChanLoraStd.ImplicitcrcEn,
+			Implicitcoderate:      c.ChanLoraStd.Implicitcoderate,
+		},
+		ChanMultiSF_0: transCfChanMultiSF(c.ChanMultiSF[0]),
+		ChanMultiSF_1: transCfChanMultiSF(c.ChanMultiSF[1]),
+		ChanMultiSF_2: transCfChanMultiSF(c.ChanMultiSF[2]),
+		ChanMultiSF_3: transCfChanMultiSF(c.ChanMultiSF[3]),
+		ChanMultiSF_4: transCfChanMultiSF(c.ChanMultiSF[4]),
+		ChanMultiSF_5: transCfChanMultiSF(c.ChanMultiSF[5]),
+		ChanMultiSF_6: transCfChanMultiSF(c.ChanMultiSF[6]),
+		ChanMultiSF_7: transCfChanMultiSF(c.ChanMultiSF[7]),
+	}
+}
+
+func transApiTxgainlut(c []*api.TxGainLutItem) []*cf.TxGainLutItem {
+	out := []*cf.TxGainLutItem{}
+
+	for _, v := range c {
+		out = append(out, &cf.TxGainLutItem{
+			RFPower: int(v.Rfpower),
+			PaGain:  int(v.Pagain),
+			PwrIdx:  int(v.Pwridx),
+		})
+	}
+
+	return out
+}
+
+func transApiChanMultiSF(c *api.EU868ChannelMultiSF) *cf.ChanMultiSF {
+	return &cf.ChanMultiSF{
+		Enable: c.Enable,
+		Radio:  c.Radio,
+		IF:     c.Offset,
+	}
+}
+
+func transApiChannel(c *api.EU868Config) *cf.Channel {
+	return &cf.Channel{
+		Radio0: cf.Radio0{
+			Enable:          c.Radio_0.Enable,
+			Type:            c.Radio_0.Type,
+			SingleInputMode: c.Radio_0.SingleInputMode,
+			Freq:            c.Radio_0.Freq,
+			RssiOffset:      c.Radio_0.RssiOffset,
+			RssiTcomp: cf.RssiTcomp{
+				CoeffA: c.Radio_0.Rssicomp.Coeffa,
+				CoeffB: c.Radio_0.Rssicomp.Coeffb,
+				CoeffC: c.Radio_0.Rssicomp.Coeffc,
+				CoeffD: c.Radio_0.Rssicomp.Coeffd,
+				CoeffE: c.Radio_0.Rssicomp.Coeffe,
+			},
+			TxEnable:  c.Radio_0.TxEnable,
+			TxFreqMin: c.Radio_0.TxFreqMin,
+			TxFreqMax: c.Radio_0.TxFreqMax,
+			TxGainLut: transApiTxgainlut(c.Radio_0.Txgainlut),
+		},
+		Radio1: cf.Radio1{
+			Enable:          c.Radio_1.Enable,
+			Type:            c.Radio_1.Type,
+			SingleInputMode: c.Radio_1.SingleInputMode,
+			Freq:            c.Radio_1.Freq,
+			RssiOffset:      c.Radio_1.RssiOffset,
+			RssiTcomp: cf.RssiTcomp{
+				CoeffA: c.Radio_1.Rssicomp.Coeffa,
+				CoeffB: c.Radio_1.Rssicomp.Coeffb,
+				CoeffC: c.Radio_1.Rssicomp.Coeffc,
+				CoeffD: c.Radio_1.Rssicomp.Coeffd,
+				CoeffE: c.Radio_1.Rssicomp.Coeffe,
+			},
+			TxEnable: c.Radio_1.TxEnable,
+		},
+		ChanLoraStd: cf.ChanLoraStd{
+			Enable:                c.Chan_LoraStd.Enable,
+			Radio:                 c.Chan_LoraStd.Radio,
+			IF:                    c.Chan_LoraStd.If,
+			Bandwidth:             c.Chan_LoraStd.Bandwidth,
+			SpreadFactor:          c.Chan_LoraStd.SpreadFactor,
+			ImplicitHdr:           c.Chan_LoraStd.ImplicitHdr,
+			Implicitpayloadlength: c.Chan_LoraStd.Implicitpayloadlength,
+			ImplicitcrcEn:         c.Chan_LoraStd.ImplicitcrcEn,
+			Implicitcoderate:      c.Chan_LoraStd.Implicitcoderate,
+		},
+		ChanLoraFSK: cf.ChanLoraFSK{
+			Enable: false,
+		},
+		ChanMultiSFAll: *band.ChanMultiSFAll(),
+		ChanMultiSF: [8]*cf.ChanMultiSF{
+			transApiChanMultiSF(c.ChanMultiSF_0),
+			transApiChanMultiSF(c.ChanMultiSF_1),
+			transApiChanMultiSF(c.ChanMultiSF_2),
+			transApiChanMultiSF(c.ChanMultiSF_3),
+			transApiChanMultiSF(c.ChanMultiSF_4),
+			transApiChanMultiSF(c.ChanMultiSF_5),
+			transApiChanMultiSF(c.ChanMultiSF_6),
+			transApiChanMultiSF(c.ChanMultiSF_7),
+		},
+	}
+}
+
+func transRequest(c *api.ConfigGateWayModeRegionRequest) *api.GetGateWayModeRegionResponse {
+	out := api.GetGateWayModeRegionResponse{
+		Mode:   &api.GateWayMode{},
+		Region: &api.GateWayRegion{},
+		Filter: &api.Filter{}}
+	deepCopy(c.Mode, out.Mode)
+	deepCopy(c.Region, out.Region)
+	deepCopy(c.Filter, out.Filter)
+	return &out
+}
+
+func transResponse(c *api.GetGateWayModeRegionResponse) *api.ConfigGateWayModeRegionRequest {
+	out := api.ConfigGateWayModeRegionRequest{
+		Mode:   &api.GateWayMode{},
+		Region: &api.GateWayRegion{},
+		Filter: &api.Filter{},
+	}
+	deepCopy(c.Mode, out.Mode)
+	deepCopy(c.Region, out.Region)
+	deepCopy(c.Filter, out.Filter)
+	return &out
+}
+
+func isAdrUpdated(c *api.NSADR) bool {
+	if !c.GetEnable() {
+		return false
+	}
+
+	if hwconfig.GetMode().GetMode() != "NS" {
+		return true
+	}
+
+	if c.GetDrIdMax() != hwconfig.GetMode().GetNs().GetAdr().GetDrIdMax() ||
+		c.GetDrIdMin() != hwconfig.GetMode().GetNs().GetAdr().GetDrIdMin() {
+		return true
+	}
+
+	return false
+}
+
+func restoreDefault(bd string) error {
+	hwconfig = api.GetGateWayModeRegionResponse{
+		Mode: &api.GateWayMode{
+			Mode: "NS",
+			ModeConfig: &api.GateWayMode_Ns{
+				Ns: &api.BuiltInNetworkServer{
+					NetworkId: "000000",
+					Adr: &api.NSADR{
+						Enable:  true,
+						DrIdMin: 0,
+						DrIdMax: 5,
+						Margin:  10,
+					},
+					Rx1: &api.NSRX1{
+						DrOffset: 0,
+						Delay:    1,
+					},
+					Rx2: &api.NSRX2{
+						Freq:    -1,
+						DrIndex: -1,
+					},
+					DwellTimeLimit:  &api.NSDwellTimeLimit{}, // Avoid frontend parse failure
+					DownlinkTxPower: -1,
+				},
+			},
+		},
+		Filter: &api.Filter{
+			AutoFilter: &api.AutoFilter{
+				Enable: false,
+			},
+			WhiteList: &api.WhiteList{
+				Enable: false,
+			},
+		},
+	}
+	switch bd {
+	case "CN470":
+		hwconfig.Region = &api.GateWayRegion{
+			RegionId: "CN470",
+			RegionConfig: &api.GateWayRegion_Cn470{
+				Cn470: &api.CN470Config{
+					SubBandId: 2,
+				},
+			},
+		}
+	case "EU868":
+		hwconfig.Region = &api.GateWayRegion{
+			RegionId: "EU868",
+			RegionConfig: &api.GateWayRegion_Eu868{
+				Eu868: transCfChannel(band.GetEU868DefaultChannelSettings()),
+			},
+		}
+	case "US915":
+		hwconfig.Region = &api.GateWayRegion{
+			RegionId: "US915",
+			RegionConfig: &api.GateWayRegion_Us915{
+				Us915: &api.US915Config{
+					SubBandId: 2,
+				},
+			},
+		}
+	default:
+		return fmt.Errorf("unsupported region: %v", bd)
+	}
+	return applySettings(transResponse(&hwconfig))
+}
+
+func applySettings(c *api.ConfigGateWayModeRegionRequest) error {
 	// gateway region
 	var (
 		b   band.Band
 		i   integration.Integration
 		err error
-		adr [2]int32 = [2]int32{-1, -1}
 	)
 
 	switch c.GetRegion().GetRegionId() {
-	case "CN470":
-		r := c.GetRegion().GetCn470()
-		if r == nil {
-			return adr, errors.New("fail to parse region parameters")
-		}
-		b, err = band.NewBandCN470(r.GetSubBandId())
 	case "EU868":
 		r := c.GetRegion().GetEu868()
 		if r == nil {
-			return adr, errors.New("fail to parse region parameters")
+			return errors.New("fail to parse region parameters")
 		}
-		b, err = band.NewBandEU868(r.GetRadio_0().GetFreq(), []int32{
-			r.GetChanMultiSF_3().GetOffset(),
-			r.GetChanMultiSF_4().GetOffset(),
-			r.GetChanMultiSF_5().GetOffset(),
-			r.GetChanMultiSF_6().GetOffset(),
-			r.GetChanMultiSF_7().GetOffset(),
-		})
-	case "IN865":
-		b, err = band.NewBandIN865()
-	case "RU864":
-		b, err = band.NewBandRU864()
+		b, err = band.NewBandEU868(transApiChannel(r))
 	case "US915":
 		r := c.GetRegion().GetUs915()
 		if r == nil {
-			return adr, errors.New("fail to parse region parameters")
+			return errors.New("fail to parse region parameters")
 		}
 		b, err = band.NewBandUS915(r.GetSubBandId())
-	case "AU915":
-		b, err = band.NewBandAU915(1)
-	case "KR920":
-		b, err = band.NewBandKR920(1)
 	default:
 		err = fmt.Errorf("unsupport region: %v", c.Region.RegionId)
 	}
 
 	if err != nil {
-		return adr, err
+		return err
 	}
 
 	// gateway mode
@@ -120,7 +471,7 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 		m := c.GetMode().GetNs()
 		ni, je := []string{}, [][2]string{}
 		if m == nil {
-			return adr, errors.New("fail to parse mode parameters")
+			return errors.New("fail to parse mode parameters")
 		}
 		if c.GetFilter().GetWhiteList().GetEnable() {
 			ni = c.GetFilter().GetWhiteList().GetOuiList()
@@ -128,10 +479,9 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 				je = append(je, [2]string{jl.GetFrom(), jl.GetTo()})
 			}
 		}
-		if m.GetAdr().GetEnable() && (hwconfig.GetMode().GetMode() != "NS" ||
-			m.GetAdr().GetDrIdMax() != hwconfig.GetMode().GetNs().GetAdr().GetDrIdMax() ||
-			m.GetAdr().GetDrIdMin() != hwconfig.GetMode().GetNs().GetAdr().GetDrIdMin()) {
-			adr = [2]int32{m.GetAdr().GetDrIdMin(), m.GetAdr().GetDrIdMax()}
+
+		if isAdrUpdated(m.GetAdr()) {
+
 		}
 
 		i, err = integration.NewBuiltinIntegration(&integration.BuiltinNSSettings{
@@ -161,7 +511,7 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 	case "PF":
 		m := c.GetMode().GetPf()
 		if m == nil {
-			return adr, errors.New("fail to parse mode parameters")
+			return errors.New("fail to parse mode parameters")
 		}
 		i, err = integration.NewPacketForwarderIntegration(&integration.PacketForwarderSettings{
 			Band: b,
@@ -179,7 +529,7 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 	case "BS":
 		m := c.GetMode().GetBs()
 		if m == nil {
-			return adr, errors.New("fail to parse mode parameters")
+			return errors.New("fail to parse mode parameters")
 		}
 
 		a := integration.Authentication{}
@@ -215,287 +565,59 @@ func Set(c *api.ConfigGateWayModeRegionRequest) ([2]int32, error) {
 			Authentication: a,
 		})
 	default:
-		err = fmt.Errorf("unsupport mode: %v", c.GetMode().GetBs())
+		err = fmt.Errorf("unsupported mode: %v", c.GetMode().GetMode())
 	}
-	if err != nil {
-		return adr, err
-	}
-
-	if err = integration.ApplySettings(i); err != nil {
-		return adr, err
-	}
-
-	hwconfig.Mode = c.Mode
-	hwconfig.Region = c.Region
-	hwconfig.Filter = c.Filter
-
-	return adr, Save(c)
-}
-
-func Get(isAdmin bool) (*api.GetGateWayModeRegionResponse, error) {
-	// proto: in order to achieve deep copy function
-	b, err := proto.Marshal(&hwconfig)
-	if err != nil {
-		return nil, err
-	}
-
-	c := api.GetGateWayModeRegionResponse{}
-	err = proto.Unmarshal(b, &c)
-	if err != nil {
-		return nil, err
-	}
-
-	if c.GetMode().GetMode() == "PF" {
-		c.Mode.GetPf().GetProtocol().Type = "GWMP"
-	}
-
-	if (!isAdmin) && (c.GetMode().GetMode() == "BS") {
-		c.GetMode().GetBs().GetAuth().CaCert = "······"
-		c.GetMode().GetBs().GetAuth().CliCert = "······"
-		c.GetMode().GetBs().GetAuth().CliKey = "······"
-	}
-
-	return &c, nil
-}
-
-func Save(c *api.ConfigGateWayModeRegionRequest) error {
-	b, err := proto.Marshal(c)
 	if err != nil {
 		return err
 	}
 
-	return writeFile(HWPath+HWName, b)
+	return integration.ApplySettings(i)
 }
 
-func Load(c *api.GetGateWayModeRegionResponse) error {
-	b, err := readFile(HWPath + HWName)
-	if err != nil {
-		return err
-	}
-
-	return proto.Unmarshal(b, c)
-}
-
-func LoadBuiltinConfig( /*m api.GateWayMode*/ ) (*api.GetGateWayModeRegionResponse, error) {
-	pf := cf.UdpPacketForwarder{}
-	err := pf.ReadFrom(integration.PFPath + integration.PFName)
-	if err != nil {
-		return nil, err
-	}
-
-	ns := cf.NetworkServer{}
-	err = ns.ReadFrom(integration.NSPath + integration.NSName)
-	if err != nil {
-		return nil, err
-	}
-
-	gb := cf.GatewayBridge{}
-	err = gb.ReadFrom(integration.GBPath + integration.GBName)
-	if err != nil {
-		return nil, err
-	}
-
-	var r *api.GateWayRegion
-
-	switch ns.Band.Name {
-	case "CN470":
-		sb := int32((pf.SX130xConfig.Radio0.Freq-470300000-1100000)/1600000 + 1)
-		r = &api.GateWayRegion{
-			RegionId: "CN470",
-			RegionConfig: &api.GateWayRegion_Cn470{
-				Cn470: &api.CN470Config{
-					SubBandId: sb,
-				},
-			},
+func deepCopy(cin interface{}, cout interface{}) error {
+	switch cin.(type) {
+	case *api.GateWayMode:
+		in, _ := cin.(*api.GateWayMode)
+		b, err := proto.Marshal(in)
+		if err != nil {
+			return err
 		}
-	case "EU868":
-		t := [](*api.TxGainLutItem){}
-		for _, v := range pf.SX130xConfig.Radio0.TxGainLut {
-			t = append(t, &api.TxGainLutItem{
-				Rfpower: int64(v.RFPower),
-				Pagain:  int64(v.PaGain),
-				Pwridx:  int64(v.PwrIdx),
-			})
+		out, ok := cout.(*api.GateWayMode)
+		if !ok {
+			return fmt.Errorf("i/o type mismatch")
 		}
-		r = &api.GateWayRegion{
-			RegionId: "EU868",
-			RegionConfig: &api.GateWayRegion_Eu868{
-				Eu868: &api.EU868Config{
-					TxFreq: &api.TXFreqItem{
-						Min: pf.SX130xConfig.Radio0.TxFreqMin,
-						Max: pf.SX130xConfig.Radio0.TxFreqMax,
-					},
-					Radio_0: &api.EU868Radio0{
-						Enable:          pf.SX130xConfig.Radio0.Enable,
-						Type:            pf.SX130xConfig.Radio0.Type,
-						SingleInputMode: pf.SX130xConfig.Radio0.SingleInputMode,
-						Freq:            pf.SX130xConfig.Radio0.Freq,
-						RssiOffset:      pf.SX130xConfig.Radio0.RssiOffset,
-						Rssicomp: &api.RssiTcomp{
-							Coeffa: pf.SX130xConfig.Radio0.RssiTcomp.CoeffA,
-							Coeffb: pf.SX130xConfig.Radio0.RssiTcomp.CoeffB,
-							Coeffc: pf.SX130xConfig.Radio0.RssiTcomp.CoeffC,
-							Coeffd: pf.SX130xConfig.Radio0.RssiTcomp.CoeffD,
-							Coeffe: pf.SX130xConfig.Radio0.RssiTcomp.CoeffE,
-						},
-						TxEnable:  pf.SX130xConfig.Radio0.TxEnable,
-						TxFreqMin: pf.SX130xConfig.Radio0.TxFreqMin,
-						TxFreqMax: pf.SX130xConfig.Radio0.TxFreqMax,
-						Txgainlut: t,
-					},
-					Radio_1: &api.EU868Radio1{
-						Enable:          pf.SX130xConfig.Radio1.Enable,
-						Type:            pf.SX130xConfig.Radio1.Type,
-						SingleInputMode: pf.SX130xConfig.Radio1.SingleInputMode,
-						Freq:            pf.SX130xConfig.Radio1.Freq,
-						RssiOffset:      pf.SX130xConfig.Radio1.RssiOffset,
-						Rssicomp: &api.RssiTcomp{
-							Coeffa: pf.SX130xConfig.Radio1.RssiTcomp.CoeffA,
-							Coeffb: pf.SX130xConfig.Radio1.RssiTcomp.CoeffB,
-							Coeffc: pf.SX130xConfig.Radio1.RssiTcomp.CoeffC,
-							Coeffd: pf.SX130xConfig.Radio1.RssiTcomp.CoeffD,
-							Coeffe: pf.SX130xConfig.Radio1.RssiTcomp.CoeffE,
-						},
-						TxEnable: pf.SX130xConfig.Radio1.TxEnable,
-					},
-					Chan_LoraStd: &api.EU868ChannelLoraStandard{
-						Enable:                pf.SX130xConfig.ChanLoraStd.Enable,
-						Radio:                 pf.SX130xConfig.ChanLoraStd.Radio,
-						If:                    pf.SX130xConfig.ChanLoraStd.IF,
-						Bandwidth:             pf.SX130xConfig.ChanLoraStd.Bandwidth,
-						SpreadFactor:          pf.SX130xConfig.ChanLoraStd.SpreadFactor,
-						ImplicitHdr:           pf.SX130xConfig.ChanLoraStd.ImplicitHdr,
-						Implicitpayloadlength: pf.SX130xConfig.ChanLoraStd.Implicitpayloadlength,
-						ImplicitcrcEn:         pf.SX130xConfig.ChanLoraStd.ImplicitcrcEn,
-						Implicitcoderate:      pf.SX130xConfig.ChanLoraStd.Implicitcoderate,
-					},
-					ChanMultiSF_0: &api.EU868ChannelMultiSF{
-						Enable: pf.SX130xConfig.ChanMultiSF0.Enable,
-						Radio:  pf.SX130xConfig.ChanMultiSF0.Radio,
-						Offset: pf.SX130xConfig.ChanMultiSF0.IF,
-					},
-					ChanMultiSF_1: &api.EU868ChannelMultiSF{
-						Enable: pf.SX130xConfig.ChanMultiSF1.Enable,
-						Radio:  pf.SX130xConfig.ChanMultiSF1.Radio,
-						Offset: pf.SX130xConfig.ChanMultiSF1.IF,
-					},
-					ChanMultiSF_2: &api.EU868ChannelMultiSF{
-						Enable: pf.SX130xConfig.ChanMultiSF2.Enable,
-						Radio:  pf.SX130xConfig.ChanMultiSF2.Radio,
-						Offset: pf.SX130xConfig.ChanMultiSF2.IF,
-					},
-					ChanMultiSF_3: &api.EU868ChannelMultiSF{
-						Enable: pf.SX130xConfig.ChanMultiSF3.Enable,
-						Radio:  pf.SX130xConfig.ChanMultiSF3.Radio,
-						Offset: pf.SX130xConfig.ChanMultiSF3.IF,
-					},
-					ChanMultiSF_4: &api.EU868ChannelMultiSF{
-						Enable: pf.SX130xConfig.ChanMultiSF4.Enable,
-						Radio:  pf.SX130xConfig.ChanMultiSF4.Radio,
-						Offset: pf.SX130xConfig.ChanMultiSF4.IF,
-					},
-					ChanMultiSF_5: &api.EU868ChannelMultiSF{
-						Enable: pf.SX130xConfig.ChanMultiSF5.Enable,
-						Radio:  pf.SX130xConfig.ChanMultiSF5.Radio,
-						Offset: pf.SX130xConfig.ChanMultiSF5.IF,
-					},
-					ChanMultiSF_6: &api.EU868ChannelMultiSF{
-						Enable: pf.SX130xConfig.ChanMultiSF6.Enable,
-						Radio:  pf.SX130xConfig.ChanMultiSF6.Radio,
-						Offset: pf.SX130xConfig.ChanMultiSF6.IF,
-					},
-					ChanMultiSF_7: &api.EU868ChannelMultiSF{
-						Enable: pf.SX130xConfig.ChanMultiSF7.Enable,
-						Radio:  pf.SX130xConfig.ChanMultiSF7.Radio,
-						Offset: pf.SX130xConfig.ChanMultiSF7.IF,
-					},
-				},
-			},
+		return proto.Unmarshal(b, out)
+	case *api.GateWayRegion:
+		in, _ := cin.(*api.GateWayRegion)
+		b, err := proto.Marshal(in)
+		if err != nil {
+			return err
 		}
-	case "US915":
-		sb := int32((pf.SX130xConfig.Radio0.Freq-902300000-400000)/1600000 + 1)
-		r = &api.GateWayRegion{
-			RegionId: "US915",
-			RegionConfig: &api.GateWayRegion_Us915{
-				Us915: &api.US915Config{
-					SubBandId: sb,
-				},
-			},
+		out, ok := cout.(*api.GateWayRegion)
+		if !ok {
+			return fmt.Errorf("i/o type mismatch")
 		}
+		return proto.Unmarshal(b, out)
+	case *api.Filter:
+		in, _ := cin.(*api.Filter)
+		b, err := proto.Marshal(in)
+		if err != nil {
+			return err
+		}
+		out, ok := cout.(*api.Filter)
+		if !ok {
+			return fmt.Errorf("i/o type mismatch")
+		}
+		return proto.Unmarshal(b, out)
+	default:
+		return fmt.Errorf("unsupported type %T", cin)
 	}
-	return &api.GetGateWayModeRegionResponse{
-		Mode: &api.GateWayMode{
-			Mode: "NS",
-			ModeConfig: &api.GateWayMode_Ns{
-				Ns: &api.BuiltInNetworkServer{
-					NetworkId: ns.NetId,
-					Adr: &api.NSADR{
-						Enable: !ns.DisableADR,
-						Margin: ns.InstallationMargin,
-					},
-					Rx1: &api.NSRX1{
-						DrOffset: ns.Rx1DROffset,
-						Delay:    ns.Rx1Delay,
-					},
-					Rx2: &api.NSRX2{
-						Freq:    ns.Rx2Frequency,
-						DrIndex: ns.Rx2DR,
-					},
-					DwellTimeLimit: &api.NSDwellTimeLimit{
-						Uplink:   -1,
-						Downlink: -1,
-					},
-					DownlinkTxPower: ns.DownlinkTxPower,
-				},
-			},
-		},
-		Region: r,
-		Filter: &api.Filter{
-			WhiteList: &api.WhiteList{},
-		},
-	}, nil
 }
 
-func LoadBsConfig() (*api.GetGateWayModeRegionResponse, error) {
-	return &api.GetGateWayModeRegionResponse{}, nil
-}
-
-func LoadPfConfig() (*api.GetGateWayModeRegionResponse, error) {
-	return &api.GetGateWayModeRegionResponse{}, nil
-}
-
-func readFile(path string) ([]byte, error) {
-	file, err := os.Open(path)
+func Print(a any) {
+	b, err := json.MarshalIndent(a, " ", "	  ")
 	if err != nil {
-		return nil, fmt.Errorf("error opening file: %v", err)
+		panic(err)
 	}
-	defer file.Close()
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return nil, fmt.Errorf("error getting file information: %v", err)
-	}
-	fileSize := fileInfo.Size()
-
-	data := make([]byte, fileSize)
-	_, err = file.Read(data)
-	if err != nil {
-		return nil, fmt.Errorf("error reading file: %v", err)
-	}
-
-	return data, nil
-}
-
-func writeFile(path string, data []byte) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("error creating file: %v", err)
-	}
-	defer file.Close()
-
-	_, err = file.Write(data)
-	if err != nil {
-		return fmt.Errorf("error writing to file: %v", err)
-	}
-	return nil
+	fmt.Printf("%+v\n", string(b))
 }

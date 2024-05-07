@@ -1,6 +1,6 @@
 package main
 
-import "gitee.com/arya123/chirpstack-api/go/as/external/api"
+import "gitee.com/dfrobotcd/chirpstack-api/go/as/external/api"
 
 var (
 	CN470 *api.GateWayRegion = &api.GateWayRegion{
@@ -50,7 +50,7 @@ var (
 		RegionId: "US915",
 		RegionConfig: &api.GateWayRegion_Us915{
 			Us915: &api.US915Config{
-				SubBandId: 8,
+				SubBandId: 2,
 			},
 		},
 	}

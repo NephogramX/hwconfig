@@ -102,7 +102,7 @@ func NewGatewayBridge(s *GBSettings) *GatewayBridge {
 				Auth: Auth{
 					Type: "generic",
 					Generic: Generic{
-						Server: "tcp://127.0.0.1:1883",
+						Server: "tcp://127.0.0.1:1884",
 					},
 				},
 			},
@@ -119,7 +119,7 @@ func (c *GatewayBridge) Write() error {
 	if err := encoder.Encode(c); err != nil {
 		return err
 	}
-	return writeFile(c.File.String(), buf.Bytes())
+	return WriteFile(c.File.String(), buf.Bytes())
 }
 
 func (c *GatewayBridge) ReadFrom(p string) error {
