@@ -1,7 +1,10 @@
 package main
 
 import (
-	"github.com/NephogramX/hwconfig"
+	"encoding/json"
+	"fmt"
+
+	"gitee.com/dfrobotcd/chirpstack-api/go/as/external/api"
 )
 
 func main() {
