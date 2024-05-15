@@ -8,15 +8,77 @@ import (
 )
 
 type CN470Band struct {
-	subbandIndex int32
+	cf.Channel
+	uplinkChannels []int32
+}
+
+func GetCN470DefaultChannelSettings() *cf.Channel {
+	b, _ := NewBandCN470(2)
+	return b.GetChannelSettings()
 }
 
 func NewBandCN470(subbandIndex int32) (*CN470Band, error) {
-	if subbandIndex < 0 || subbandIndex > 12 {
+	if subbandIndex < 1 || subbandIndex > 12 {
 		return nil, errors.New(fmt.Sprint("unsupported subband index:", subbandIndex))
 	}
+
+	ch := [8]int32{}
+	for i := range ch {
+		ch[i] = (subbandIndex-1)*8 + int32(i)
+	}
+
 	return &CN470Band{
-		subbandIndex: subbandIndex,
+		Channel: cf.Channel{
+			Radio0: cf.Radio0{
+				Enable:     true,
+				Type:       "SX1250",
+				Freq:       470300000 + 1600000*(subbandIndex-1) + 1100000,
+				RssiOffset: rssiOffset500MHz(),
+				RssiTcomp:  *rssiTcomp(),
+				TxEnable:   true,
+				TxFreqMin:  470000000,
+				TxFreqMax:  510000000,
+				TxGainLut:  txGainLut500MHz(),
+			},
+			Radio1: cf.Radio1{
+				Enable:     true,
+				Type:       "SX1250",
+				Freq:       470300000 + 1600000*(subbandIndex-1) + 300000,
+				RssiOffset: rssiOffset500MHz(),
+				RssiTcomp:  *rssiTcomp(),
+				TxEnable:   true,
+			},
+			ChanMultiSFAll: *ChanMultiSFAll(),
+			ChanMultiSF: [8]*cf.ChanMultiSF{
+				{Enable: true, Radio: 0, IF: -300000},
+				{Enable: true, Radio: 0, IF: -100000},
+				{Enable: true, Radio: 0, IF: 100000},
+				{Enable: true, Radio: 0, IF: 300000},
+				{Enable: true, Radio: 1, IF: -300000},
+				{Enable: true, Radio: 1, IF: -100000},
+				{Enable: true, Radio: 1, IF: 100000},
+				{Enable: true, Radio: 1, IF: 300000},
+			},
+			ChanLoraStd: cf.ChanLoraStd{
+				Enable:                true,
+				Radio:                 1,
+				IF:                    -200000,
+				Bandwidth:             250000,
+				SpreadFactor:          7,
+				ImplicitHdr:           false,
+				Implicitpayloadlength: 17,
+				ImplicitcrcEn:         false,
+				Implicitcoderate:      1,
+			},
+			ChanLoraFSK: cf.ChanLoraFSK{
+				Enable:    true,
+				Radio:     1,
+				IF:        300000,
+				Bandwidth: 125000,
+				Datarate:  50000,
+			},
+		},
+		uplinkChannels: ch[:],
 	}, nil
 }
 
@@ -25,50 +87,7 @@ func (b *CN470Band) String() string {
 }
 
 func (b CN470Band) GetChannelSettings() *cf.Channel {
-	return &cf.Channel{
-		RaidoCneterFrequency: [2]int32{
-			470300000 + 1600000*(b.subbandIndex-1) + 1100000,
-			470300000 + 1600000*(b.subbandIndex-1) + 300000,
-		},
-		MinTxFrequency: 470000000,
-		MaxTxFrequency: 510000000,
-		RssiOffset:     -207.0,
-		ChanMultiSF: [8]cf.ChanMultiSF{
-			{Enable: true, Radio: 0, IF: -300000},
-			{Enable: true, Radio: 0, IF: -100000},
-			{Enable: true, Radio: 0, IF: 100000},
-			{Enable: true, Radio: 0, IF: 300000},
-			{Enable: true, Radio: 1, IF: -300000},
-			{Enable: true, Radio: 1, IF: -100000},
-			{Enable: true, Radio: 1, IF: 100000},
-			{Enable: true, Radio: 1, IF: 300000},
-		},
-		ChanLoRaStd: cf.ChanLoRaStd{
-			ChanMultiSF: cf.ChanMultiSF{Enable: true, Radio: 1, IF: -200000},
-			Bandwidth:   250000, SpreadFactor: 7,
-		},
-		ChanLoRaFsk: cf.ChanLoRaFSK{
-			ChanMultiSF: cf.ChanMultiSF{Enable: false, Radio: 1},
-		},
-		TxGainLutItem: []cf.TxGainLutItem{
-			{RFPower: -6, PaGain: 0, PwrIdx: 0},
-			{RFPower: -3, PaGain: 0, PwrIdx: 1},
-			{RFPower: 0, PaGain: 0, PwrIdx: 2},
-			{RFPower: 3, PaGain: 1, PwrIdx: 3},
-			{RFPower: 6, PaGain: 1, PwrIdx: 4},
-			{RFPower: 10, PaGain: 1, PwrIdx: 5},
-			{RFPower: 11, PaGain: 1, PwrIdx: 6},
-			{RFPower: 12, PaGain: 1, PwrIdx: 7},
-			{RFPower: 13, PaGain: 1, PwrIdx: 8},
-			{RFPower: 14, PaGain: 1, PwrIdx: 9},
-			{RFPower: 16, PaGain: 1, PwrIdx: 10},
-			{RFPower: 20, PaGain: 1, PwrIdx: 11},
-			{RFPower: 23, PaGain: 1, PwrIdx: 12},
-			{RFPower: 25, PaGain: 1, PwrIdx: 13},
-			{RFPower: 26, PaGain: 1, PwrIdx: 14},
-			{RFPower: 27, PaGain: 1, PwrIdx: 15},
-		},
-	}
+	return &b.Channel
 }
 
 func (b CN470Band) GetExtraChannels() *[]cf.ExtraChannels {
@@ -76,6 +95,5 @@ func (b CN470Band) GetExtraChannels() *[]cf.ExtraChannels {
 }
 
 func (b CN470Band) GetUplinkChannels() *[]int32 {
-	var ch int32 = (b.subbandIndex - 1) * 8
-	return &[]int32{ch, ch + 1, ch + 2, ch + 3, ch + 4, ch + 5, ch + 6, ch + 7}
+	return &b.uplinkChannels
 }

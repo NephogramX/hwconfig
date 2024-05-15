@@ -21,7 +21,7 @@ type ConfigFile interface {
 	IsNil() bool
 }
 
-func readFile(path string) ([]byte, error) {
+func ReadFile(path string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %v", err)
@@ -43,7 +43,7 @@ func readFile(path string) ([]byte, error) {
 	return data, nil
 }
 
-func writeFile(path string, data []byte) error {
+func WriteFile(path string, data []byte) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("error creating file: %v", err)

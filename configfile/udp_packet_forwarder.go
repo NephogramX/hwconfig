@@ -67,10 +67,10 @@ type Radio0 struct {
 	Freq            int32   `json:"freq"`
 	RssiOffset      float32 `json:"rssi_offset"`
 	RssiTcomp       `json:"rssi_tcomp"`
-	TxEnable        bool            `json:"tx_enable"`
-	TxFreqMin       int32           `json:"tx_freq_min"`
-	TxFreqMax       int32           `json:"tx_freq_max"`
-	TxGainLut       []TxGainLutItem `json:"tx_gain_lut"`
+	TxEnable        bool             `json:"tx_enable"`
+	TxFreqMin       int32            `json:"tx_freq_min"`
+	TxFreqMax       int32            `json:"tx_freq_max"`
+	TxGainLut       []*TxGainLutItem `json:"tx_gain_lut"`
 }
 
 type Radio1 struct {
@@ -103,8 +103,7 @@ type SX130xConfig struct {
 	ChanMultiSF6   ChanMultiSF    `json:"chan_multiSF_6"`
 	ChanMultiSF7   ChanMultiSF    `json:"chan_multiSF_7"`
 	ChanLoraStd    `json:"chan_Lora_std"`
-
-	ChanLoraFSK `json:"chan_FSK"`
+	ChanLoraFSK    `json:"chan_FSK"`
 }
 
 type GateWayConfig struct {
@@ -118,60 +117,47 @@ type GateWayConfig struct {
 	ForwardCrcValid    bool   `json:"forward_crc_valid"`
 	ForwardCrcError    bool   `json:"forward_crc_error"`
 	ForwardCrcDisabled bool   `json:"forward_crc_disabled"`
-	// GPSTTYPath         string  `json:"gps_tty_path"`
-	// RefLatitude        float32 `json:"ref_latitude"`
-	// RefLongitude       float32 `json:"ref_longitude"`
-	// RefAltitude        int32   `json:"ref_altitude"`
-	// AutoquitThreshold  int32   `json:"autoquit_threshold"`
-	// BeaconPeriod       int32   `json:"beacon_period"`
-	// BeaconFreqHZ       int32   `json:"beacon_freq_hz"`
-	// BeaconFreqNB       int32   `json:"beacon_freq_nb"`
-	// BeaconFreqStep     int32   `json:"beacon_freq_step"`
-	// BeaconDatarate     int32   `json:"beacon_datarate"`
-	// BeaconBwHZ         int32   `json:"beacon_bw_hz"`
-	// BeaconPower        int32   `json:"beacon_power"`
-	// BeaconInfodesc     int32   `json:"beacon_infodesc"`
+
+	// Class B & GPS parameters, to do in future
+
+	// GPSTTYPath        string  `json:"gps_tty_path"`
+	// RefLatitude       float32 `json:"ref_latitude"`
+	// RefLongitude      float32 `json:"ref_longitude"`
+	// RefAltitude       int32   `json:"ref_altitude"`
+	// AutoquitThreshold int32   `json:"autoquit_threshold"`
+	// BeaconPeriod      int32   `json:"beacon_period"`
+	// BeaconFreqHZ      int32   `json:"beacon_freq_hz"`
+	// BeaconFreqNB      int32   `json:"beacon_freq_nb"`
+	// BeaconFreqStep    int32   `json:"beacon_freq_step"`
+	// BeaconDatarate    int32   `json:"beacon_datarate"`
+	// BeaconBwHZ        int32   `json:"beacon_bw_hz"`
+	// BeaconPower       int32   `json:"beacon_power"`
+	// BeaconInfodesc    int32   `json:"beacon_infodesc"`
 }
 
 type RefPayloadItem struct {
 	ID string `json:"id"`
 }
 
-type DebugConf struct {
-	RefPayload []RefPayloadItem `json:"ref_payload"`
-	LogFile    string           `json:"log_file"`
-}
+// type DebugConf struct {
+// 	RefPayload []RefPayloadItem `json:"ref_payload"`
+// 	LogFile    string           `json:"log_file"`
+// }
 
 type UdpPacketForwarder struct {
 	SX130xConfig  `json:"SX130x_conf"`
 	GateWayConfig `json:"gateway_conf"`
 	File          `json:"-"`
-	// DebugConf     `json:"debug_conf"`
 }
 
-// channel settings
-
-type ChanLoRaStd struct {
-	ChanMultiSF
-	Bandwidth    int32
-	SpreadFactor int32
-}
-
-type ChanLoRaFSK struct {
-	ChanMultiSF
-	Bandwidth int32
-	Datarate  int32
-}
-
+// Channel Settings
 type Channel struct {
-	RaidoCneterFrequency [2]int32
-	MinTxFrequency       int32
-	MaxTxFrequency       int32
-	RssiOffset           float32
-	ChanMultiSF          [8]ChanMultiSF
-	ChanLoRaStd          ChanLoRaStd
-	ChanLoRaFsk          ChanLoRaFSK
-	TxGainLutItem        []TxGainLutItem
+	Radio0         Radio0
+	Radio1         Radio1
+	ChanMultiSFAll ChanMultiSFAll
+	ChanMultiSF    [8]*ChanMultiSF
+	ChanLoraStd    ChanLoraStd
+	ChanLoraFSK    ChanLoraFSK
 }
 
 // server settings
@@ -209,70 +195,19 @@ func NewUdpPacketForwarderCF(s *PFSettings) *UdpPacketForwarder {
 				Enable: false,
 				Mode:   "all_sf",
 			},
-			Radio0: Radio0{
-				Enable:          true,
-				Type:            "SX1250",
-				SingleInputMode: true,
-				Freq:            s.RaidoCneterFrequency[0],
-				RssiOffset:      s.RssiOffset,
-				RssiTcomp: RssiTcomp{
-					CoeffA: 0,
-					CoeffB: 0,
-					CoeffC: 20.41,
-					CoeffD: 2162.56,
-					CoeffE: 0,
-				},
-				TxEnable:  true,
-				TxFreqMin: s.MinTxFrequency,
-				TxFreqMax: s.MaxTxFrequency,
-				TxGainLut: s.TxGainLutItem,
-			},
-			Radio1: Radio1{
-				Enable:          true,
-				Type:            "SX1250",
-				SingleInputMode: true,
-				Freq:            s.RaidoCneterFrequency[1],
-				RssiOffset:      s.RssiOffset,
-				RssiTcomp: RssiTcomp{
-					CoeffA: 0,
-					CoeffB: 0,
-					CoeffC: 20.41,
-					CoeffD: 2162.56,
-					CoeffE: 0,
-				},
-				TxEnable: false,
-			},
-			ChanMultiSFAll: ChanMultiSFAll{
-				SpreadingFactorEnable: []int32{5, 6, 7, 8, 9, 10, 11, 12},
-				Radio:                 0,
-				IF:                    0,
-			},
-			ChanMultiSF0: s.ChanMultiSF[0],
-			ChanMultiSF1: s.ChanMultiSF[1],
-			ChanMultiSF2: s.ChanMultiSF[2],
-			ChanMultiSF3: s.ChanMultiSF[3],
-			ChanMultiSF4: s.ChanMultiSF[4],
-			ChanMultiSF5: s.ChanMultiSF[5],
-			ChanMultiSF6: s.ChanMultiSF[6],
-			ChanMultiSF7: s.ChanMultiSF[7],
-			ChanLoraStd: ChanLoraStd{
-				Enable:                s.ChanLoRaStd.Enable,
-				Radio:                 s.ChanLoRaStd.Radio,
-				IF:                    s.ChanLoRaStd.IF,
-				Bandwidth:             s.ChanLoRaStd.Bandwidth,
-				SpreadFactor:          s.ChanLoRaStd.SpreadFactor,
-				ImplicitHdr:           false,
-				Implicitpayloadlength: 17,
-				ImplicitcrcEn:         false,
-				Implicitcoderate:      1,
-			},
-			ChanLoraFSK: ChanLoraFSK{
-				Enable:    s.ChanLoRaFsk.Enable,
-				Radio:     s.ChanLoRaFsk.Radio,
-				IF:        s.ChanLoRaFsk.IF,
-				Bandwidth: s.ChanLoRaFsk.Bandwidth,
-				Datarate:  s.ChanLoRaFsk.Datarate,
-			},
+			Radio0:         s.Radio0,
+			Radio1:         s.Radio1,
+			ChanMultiSFAll: s.ChanMultiSFAll,
+			ChanMultiSF0:   *s.ChanMultiSF[0],
+			ChanMultiSF1:   *s.ChanMultiSF[1],
+			ChanMultiSF2:   *s.ChanMultiSF[2],
+			ChanMultiSF3:   *s.ChanMultiSF[3],
+			ChanMultiSF4:   *s.ChanMultiSF[4],
+			ChanMultiSF5:   *s.ChanMultiSF[5],
+			ChanMultiSF6:   *s.ChanMultiSF[6],
+			ChanMultiSF7:   *s.ChanMultiSF[7],
+			ChanLoraStd:    s.ChanLoraStd,
+			ChanLoraFSK:    s.ChanLoraFSK,
 		},
 		GateWayConfig: GateWayConfig{
 			GatewayID:          "0000000000000000",
@@ -285,22 +220,7 @@ func NewUdpPacketForwarderCF(s *PFSettings) *UdpPacketForwarder {
 			ForwardCrcValid:    true,
 			ForwardCrcError:    false,
 			ForwardCrcDisabled: false,
-			// RefLatitude:        0.0,
-			// RefLongitude:       0.0,
-			// RefAltitude:        0,
-			// BeaconPeriod:       pfc.BeaconPeriod,
-			// BeaconFreqHZ:       pfc.BeaconFreqHZ,
-			// BeaconFreqNB:       pfc.BeaconFreqNB,
-			// BeaconFreqStep:     pfc.BeaconFreqStep,
-			// BeaconDatarate:     pfc.BeaconDatarate,
-			// BeaconBwHZ:         pfc.BeaconBwHZ,
-			// BeaconPower:        pfc.BeaconPower,
-			// BeaconInfodesc:     pfc.BeaconInfodesc,
 		},
-		// DebugConf: DebugConf{
-		// 	RefPayload: []RefPayloadItem{{ID: "0xCAFE1234"}, {ID: "0xCAFE2345"}},
-		// 	LogFile:    "loragw_hal.log",
-		// },
 	}
 }
 
@@ -313,7 +233,7 @@ func (c *UdpPacketForwarder) Write() error {
 		return err
 	}
 
-	return writeFile(c.File.String(), jsonData)
+	return WriteFile(c.File.String(), jsonData)
 }
 
 func (c *UdpPacketForwarder) ReadFrom(p string) error {
@@ -332,5 +252,4 @@ func (c *UdpPacketForwarder) ReadFrom(p string) error {
 
 	decoder := json.NewDecoder(file)
 	return decoder.Decode(c)
-
 }

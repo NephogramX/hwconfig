@@ -125,7 +125,7 @@ func NewNetworkServer(s *NSSettings) *NetworkServer {
 					NsMqtt: NsMqtt{
 						CommandTopicTemplate: "gateway/{{ .GatewayID }}/command/{{ .CommandType }}",
 						EventTopic:           "gateway/+/event/+",
-						Server:               "tcp://localhost:1883",
+						Server:               "tcp://localhost:1884",
 					},
 				},
 			},
@@ -161,7 +161,7 @@ func (c *NetworkServer) Write() error {
 		return err
 	}
 
-	return writeFile(c.File.String(), buf.Bytes())
+	return WriteFile(c.File.String(), buf.Bytes())
 }
 
 func (c *NetworkServer) ReadFrom(p string) error {

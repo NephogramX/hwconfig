@@ -9,8 +9,10 @@ require (
 )
 
 require (
+	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.11.3 // indirect
 	golang.org/x/sys v0.0.0-20190402054613-e4093980e83e // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 )
 
