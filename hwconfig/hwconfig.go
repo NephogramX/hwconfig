@@ -216,3 +216,12 @@ func Set(ctx context.Context, req *api.ConfigGateWayModeRegionRequest) error {
 	return err
 
 }
+
+func GetAdrRange(region string) (int, int, error) {
+	b, err := band.NewWithChannel(region, nil)
+	if err != nil {
+		return -1, -1, err
+	}
+	min, max := b.GetAdrRange()
+	return min, max, err
+}

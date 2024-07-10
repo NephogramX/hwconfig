@@ -6,7 +6,7 @@ const GbDefault = `
   [backend.semtech_udp]
     udp_bind = "0.0.0.0:1700"
 
-[filter]
+[filters]
   net_ids = []
   join_euis = []
 

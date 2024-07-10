@@ -28,7 +28,7 @@ func main() {
 		},
 	)
 
-	exampleBs()
+	exampleAdrRange()
 }
 
 func exampleIO() {
@@ -79,4 +79,22 @@ func exampleBs() {
 	}); err != nil {
 		panic(err)
 	}
+}
+
+func exampleAdrRange() {
+	min, max, err := hwconfig.GetAdrRange("EU868")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("EU868 ADR Range: ", min, max)
+	min, max, err = hwconfig.GetAdrRange("US915")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("US915 ADR Range: ", min, max)
+	min, max, err = hwconfig.GetAdrRange("AB123")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("should panic")
 }

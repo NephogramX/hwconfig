@@ -127,3 +127,7 @@ func (b *US915) GetDefaultTxGainLut() *[]TxGainLutItem {
 		{RFPower: 27, PaGain: 1, PwrIdx: 14},
 	}
 }
+
+func (b *US915) GetAdrRange() (int, int) {
+	return 0, 4
+}

@@ -121,6 +121,8 @@ type Band interface {
 
 	GetApiRegion() *api.GateWayRegion
 
+	GetAdrRange() (int, int)
+
 	// GetDefaultRssiTComp() *RssiTcomp
 
 	// GetDefaultTxGainLut() *[]TxGainLutItem
