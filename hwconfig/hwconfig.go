@@ -132,6 +132,9 @@ func Set(ctx context.Context, req *api.ConfigGateWayModeRegionRequest) error {
 		return errors.Wrap(err, "bad region config:")
 	}
 
+
+	file.CleanAuthFile()
+
 	switch req.GetMode().GetMode() {
 	case "NS":
 		if err := setAdrRange(ctx, int(req.GetMode().GetNs().GetAdr().DrIdMin), int(req.GetMode().GetNs().GetAdr().DrIdMax)); err != nil {
@@ -150,7 +153,6 @@ func Set(ctx context.Context, req *api.ConfigGateWayModeRegionRequest) error {
 		if err := file.Set(&pfConf); err != nil {
 			return errors.Wrap(err, "set pf config fail")
 		}
-		file.CleanAuthFile()
 
 	case "PF":
 		pfConf.GatewayConfig.ServerAddress = req.GetMode().GetPf().GetProtocol().GetGwmp().Server
@@ -159,7 +161,6 @@ func Set(ctx context.Context, req *api.ConfigGateWayModeRegionRequest) error {
 		if err := file.Set(&pfConf); err != nil {
 			return errors.Wrap(err, "set pf config fail")
 		}
-		file.CleanAuthFile()
 
 	case "BS":
 		useCups := false

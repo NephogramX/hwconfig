@@ -28,7 +28,7 @@ func main() {
 		},
 	)
 
-	exampleAdrRange()
+	exampleIO()
 }
 
 func exampleIO() {
@@ -65,9 +65,9 @@ func exampleBs() {
 					Server: "nam1.cloud.thethings.network",
 					Port:   8887,
 					Auth: &api.BSAuth{
-						CaCert:  "",
-						CliCert: "",
-						CliKey:  "",
+						CaCert:  "123",
+						CliCert: "123",
+						CliKey:  "132",
 						Mode:    "NO_AUTH",
 						Token:   "Authorization: Bearer \n",
 					},
