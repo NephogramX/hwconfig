@@ -367,3 +367,42 @@ func (f *File) Wirte() error {
 	}
 	return nil
 }
+
+func GetFromDefault(region string) (*conf.NsConfig, *conf.PfConfig, error) {
+	var (
+		nsd string
+		pfd string
+	)
+
+	switch region {
+	case "EU868":
+		nsd = conf.Eu868NsDefault
+		pfd = conf.Eu868PfDefault
+	case "US915":
+		nsd = conf.Us915NsDefault
+		pfd = conf.Us915PfDefault
+	default:
+		return nil, nil, errors.Errorf("unsupported region: %s", region)
+	}
+
+	var (
+		nsc conf.NsConfig
+		pfc conf.PfConfig
+	)
+
+	
+
+	nsv := viper.New()
+	nsv.SetConfigType("toml")
+	if err := nsv.ReadConfig(strings.NewReader(nsd)); err != nil {
+		fmt.Println("get ns default config fail:", err)
+	}
+	if err := nsv.Unmarshal(&nsc); err != nil {
+		return nil, nil, errors.Errorf("unmarshl ns default config fail: %s", err)
+	}
+	if err := json.Unmarshal([]byte(pfd), &pfc); err != nil {
+		return nil, nil, errors.Errorf("unmarshl pf default config fail: %s", err)
+	}
+
+	return &nsc, &pfc, nil
+}

@@ -182,6 +182,8 @@ func NewWithSubband(region string, config *SX130xConfig, subband int) (Band, err
 		}
 	case "KR920":
 	case "CN470":
+	case "EU868", "IN865", "RU864":
+		return nil, errors.Errorf("region %s has no subband", region)
 	}
 	if b == nil {
 		return nil, errors.Errorf("unsupported region %s", region)

@@ -28,7 +28,7 @@ func main() {
 		},
 	)
 
-	exampleIO()
+	exampleDefault()
 }
 
 func exampleIO() {
@@ -97,4 +97,16 @@ func exampleAdrRange() {
 		panic(err)
 	}
 	fmt.Println("should panic")
+}
+
+func exampleDefault() {
+	res, err := hwconfig.GetFromDefault()
+	if err != nil {
+		panic(err)
+	}
+	b, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("-------------------------------------\n", string(b))
 }

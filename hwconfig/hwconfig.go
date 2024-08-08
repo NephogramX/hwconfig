@@ -2,6 +2,8 @@ package hwconfig
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 
 	"gitee.com/dfrobotcd/chirpstack-api/go/as/external/api"
@@ -14,6 +16,7 @@ import (
 
 var getAdrRange func(ctx context.Context) (int, int, error) = nil
 var setAdrRange func(ctx context.Context, min int, max int) error = nil
+var gwregion string = ""
 
 func Setup(region string, nsdir string, gbdir string, pfdir string, bsdir string, GetAdrRange func(context.Context) (int, int, error), SetAdrRange func(context.Context, int, int) error) error {
 	if err := file.Setup(
@@ -30,6 +33,7 @@ func Setup(region string, nsdir string, gbdir string, pfdir string, bsdir string
 	}
 	getAdrRange = GetAdrRange
 	setAdrRange = SetAdrRange
+	gwregion = region
 	return nil
 }
 
@@ -113,9 +117,6 @@ func Set(ctx context.Context, req *api.ConfigGateWayModeRegionRequest) error {
 	if err := file.Get(&pfConf); err != nil {
 		return errors.Wrap(err, "failed to get pf config")
 	}
-	// fmt.Println("old band settings:")
-	// j, _ := json.MarshalIndent(pfConf.SX130xConfig, "", "  ")
-	// fmt.Println(string(j))
 
 	var (
 		ok  bool  = false
@@ -131,7 +132,6 @@ func Set(ctx context.Context, req *api.ConfigGateWayModeRegionRequest) error {
 	if err != nil {
 		return errors.Wrap(err, "bad region config:")
 	}
-
 
 	file.CleanAuthFile()
 
@@ -215,7 +215,6 @@ func Set(ctx context.Context, req *api.ConfigGateWayModeRegionRequest) error {
 	// fmt.Println(string(j))
 
 	return err
-
 }
 
 func GetAdrRange(region string) (int, int, error) {
@@ -225,4 +224,38 @@ func GetAdrRange(region string) (int, int, error) {
 	}
 	min, max := b.GetAdrRange()
 	return min, max, err
+}
+
+func GetFromDefault() (*api.GetGateWayModeRegionResponse, error) {
+	nsc, pfc, err := file.GetFromDefault(gwregion)
+	if err != nil {
+		return nil, err
+	}
+
+	if b, err := json.MarshalIndent(nsc, "", "  "); err != nil {
+		panic(err)
+	} else {
+		fmt.Println(string(b))
+	}
+
+	b, err := band.NewWithChannel(gwregion, &pfc.SX130xConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	min, max := b.GetAdrRange()
+
+	return &api.GetGateWayModeRegionResponse{
+		Mode:   nsc.ApiMode(min, max),
+		Region: b.GetApiRegion(),
+		Filter: &api.Filter{
+			WhiteList: &api.WhiteList{
+				Enable: false,
+			},
+			AutoFilter: &api.AutoFilter{
+				Enable: false,
+			},
+		},
+	}, nil
+
 }
