@@ -73,7 +73,7 @@ func (b *US915) GetExtraChannels() []ExtraChannel {
 
 func (b *US915) GetUplinkChannels() []int {
 	ch := (b.subband - 1) * 8
-	return []int{ch, ch + 1, ch + 2, ch + 3, ch + 4, ch + 5, ch + 6, ch + 7}
+	return []int{ch, ch + 1, ch + 2, ch + 3, ch + 4, ch + 5, ch + 6, ch + 7, (b.subband - 1) + 64}
 }
 
 func (b *US915) GetSX130xConfig() *SX130xConfig {

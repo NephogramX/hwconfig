@@ -30,6 +30,7 @@ username = ''
 
 [network_server.network_settings]
 disable_adr = false
+enable_uplink_channels = [8,9,1,0,11,12,13,14,15,65]
 installation_margin = 10
 rx1_delay = 1
 rx1_dr_offset = 0
