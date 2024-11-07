@@ -390,8 +390,6 @@ func GetFromDefault(region string) (*conf.NsConfig, *conf.PfConfig, error) {
 		pfc conf.PfConfig
 	)
 
-	
-
 	nsv := viper.New()
 	nsv.SetConfigType("toml")
 	if err := nsv.ReadConfig(strings.NewReader(nsd)); err != nil {

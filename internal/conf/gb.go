@@ -153,6 +153,7 @@ type BasicStationConcentratorFSK struct {
 
 type GbConfig struct {
 	Filters struct {
+		Enable   bool        `mapstructure:"enable"`
 		NetIDs   []string    `mapstructure:"net_ids"`
 		JoinEUIs [][2]string `mapstructure:"join_euis"`
 	} `mapstructure:"filters"`
@@ -163,8 +164,8 @@ func (c *GbConfig) ApiFilter() *api.Filter {
 		WhiteList:  &api.WhiteList{},
 		AutoFilter: &api.AutoFilter{},
 	}
+	a.WhiteList.Enable = c.Filters.Enable
 	if len(c.Filters.NetIDs) > 0 || len(c.Filters.JoinEUIs) > 0 {
-		a.WhiteList.Enable = true
 		for _, eui := range c.Filters.JoinEUIs {
 			a.WhiteList.JoinList = append(a.WhiteList.JoinList, &api.JoinEUIs{From: eui[0], To: eui[1]})
 		}
@@ -175,7 +176,8 @@ func (c *GbConfig) ApiFilter() *api.Filter {
 
 func NewGbConfig(a *api.Filter) *GbConfig {
 	c := &GbConfig{}
-	if a.WhiteList.Enable {
+	c.Filters.Enable = a.WhiteList.Enable
+	if c.Filters.Enable {
 		for _, eui := range a.GetWhiteList().GetJoinList() {
 			c.Filters.JoinEUIs = append(c.Filters.JoinEUIs, [2]string{eui.GetFrom(), eui.GetTo()})
 		}

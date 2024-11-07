@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	spew.Config.DisableMethods = true
+	// spew.Config.DisableMethods = true
 	os.Mkdir("./build", os.ModePerm)
 	hwconfig.Setup(
 		"EU868",
@@ -28,7 +28,7 @@ func main() {
 		},
 	)
 
-	exampleDefault()
+	exampleFilter()
 }
 
 func exampleIO() {
@@ -109,4 +109,25 @@ func exampleDefault() {
 		panic(err)
 	}
 	fmt.Println("-------------------------------------\n", string(b))
+}
+
+func exampleFilter() {
+	res, err := hwconfig.Get(context.Background(), true)
+	if err != nil {
+		panic(err)
+	}
+	j, _ := json.MarshalIndent(res.Mode, "", "  ")
+	fmt.Println(string(j))
+
+	spew.Dump(res)
+
+	if err := hwconfig.Set(context.Background(), &api.ConfigGateWayModeRegionRequest{
+		Mode:   res.Mode,
+		Region: res.Region,
+		Filter: &api.Filter{
+			WhiteList: &api.WhiteList{Enable: true},
+		},
+	}); err != nil {
+		panic(err)
+	}
 }
